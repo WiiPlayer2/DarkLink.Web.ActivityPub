@@ -11,6 +11,8 @@ var app = builder.Build();
 app.UseWebFinger();
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
 
+app.MapGet("/profile", () => "Welcome to my profile.");
+
 app.MapMethods(
     "/{*path}",
     new[] {HttpMethods.Get, HttpMethods.Post,},
@@ -30,27 +32,20 @@ app.Run();
 internal class ResourceDescriptorProvider : IResourceDescriptorProvider
 {
     public Task<JsonResourceDescriptor?> GetResourceDescriptorAsync(Uri resource, IReadOnlyList<string> relations, HttpRequest request, CancellationToken cancellationToken)
-        => Task.FromResult<JsonResourceDescriptor?>(JsonResourceDescriptor.Empty with
+    {
+        if (resource != new Uri("acct:me@devtunnel.dark-link.info"))
+            return Task.FromResult(default(JsonResourceDescriptor?));
+
+        var descriptor = JsonResourceDescriptor.Empty with
         {
-            Subject = new Uri("acct:wiiplayer2@tech.lgbt"),
-            Aliases = new Uri[]
-            {
-                new("https://tech.lgbt/@wiiplayer2"),
-                new("https://tech.lgbt/users/wiiplayer2"),
-            }.ToImmutableList(),
-            Links = new[]
-            {
+            Subject = new Uri("acct:me@devtunnel.dark-link.info"),
+            Links = ImmutableList.Create(
                 Link.Create("http://webfinger.net/rel/profile-page") with
                 {
                     Type = "text/html",
-                    Href = new Uri("https://tech.lgbt/@wiiplayer2"),
-                },
-                Link.Create("self") with
-                {
-                    Type = "application/activity+json",
-                    Href = new Uri("https://tech.lgbt/users/wiiplayer2"),
-                },
-                Link.Create("http://ostatus.org/schema/1.0/subscribe"),
-            }.ToImmutableList(),
-        });
+                    Href = new Uri("https://devtunnel.dark-link.info/profile"),
+                }),
+        };
+        return Task.FromResult<JsonResourceDescriptor?>(descriptor);
+    }
 }
