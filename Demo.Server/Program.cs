@@ -1,14 +1,19 @@
+using System.Collections.Immutable;
 using System.Net;
+using DarkLink.Web.WebFinger.Server;
+using DarkLink.Web.WebFinger.Shared;
 using Microsoft.AspNetCore.Http.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddWebFinger<ResourceDescriptorProvider>();
 
 var app = builder.Build();
+app.UseWebFinger();
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
 
 app.MapMethods(
     "/{*path}",
-    new[] { HttpMethods.Get, HttpMethods.Post },
+    new[] {HttpMethods.Get, HttpMethods.Post,},
     async ctx =>
     {
         var headers = string.Join('\n', ctx.Request.Headers.Select(h => $"{h.Key}: {h.Value}"));
@@ -21,3 +26,31 @@ app.MapMethods(
     });
 
 app.Run();
+
+internal class ResourceDescriptorProvider : IResourceDescriptorProvider
+{
+    public Task<JsonResourceDescriptor?> GetResourceDescriptorAsync(Uri resource, IReadOnlyList<string> relations, HttpRequest request, CancellationToken cancellationToken)
+        => Task.FromResult<JsonResourceDescriptor?>(JsonResourceDescriptor.Empty with
+        {
+            Subject = new Uri("acct:wiiplayer2@tech.lgbt"),
+            Aliases = new Uri[]
+            {
+                new("https://tech.lgbt/@wiiplayer2"),
+                new("https://tech.lgbt/users/wiiplayer2"),
+            }.ToImmutableList(),
+            Links = new[]
+            {
+                Link.Create("http://webfinger.net/rel/profile-page") with
+                {
+                    Type = "text/html",
+                    Href = new Uri("https://tech.lgbt/@wiiplayer2"),
+                },
+                Link.Create("self") with
+                {
+                    Type = "application/activity+json",
+                    Href = new Uri("https://tech.lgbt/users/wiiplayer2"),
+                },
+                Link.Create("http://ostatus.org/schema/1.0/subscribe"),
+            }.ToImmutableList(),
+        });
+}
