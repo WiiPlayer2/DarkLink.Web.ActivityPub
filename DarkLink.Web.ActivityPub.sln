@@ -15,6 +15,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DarkLink.Web.ActivityVocabu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo.Server", "Demo.Server\Demo.Server.csproj", "{9FD23377-BA06-4003-A548-391E85E590E1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DarkLink.Web.WebFinger.Shared", "DarkLink.Web.WebFinger.Shared\DarkLink.Web.WebFinger.Shared.csproj", "{7367A689-CCE3-46BE-9F36-DCF81857EEF6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DarkLink.Web.WebFinger.Server", "DarkLink.Web.WebFinger.Server\DarkLink.Web.WebFinger.Server.csproj", "{8304F3D4-51E5-4ED6-90F9-1843555AFF05}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +49,14 @@ Global
 		{9FD23377-BA06-4003-A548-391E85E590E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9FD23377-BA06-4003-A548-391E85E590E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9FD23377-BA06-4003-A548-391E85E590E1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7367A689-CCE3-46BE-9F36-DCF81857EEF6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7367A689-CCE3-46BE-9F36-DCF81857EEF6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7367A689-CCE3-46BE-9F36-DCF81857EEF6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7367A689-CCE3-46BE-9F36-DCF81857EEF6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8304F3D4-51E5-4ED6-90F9-1843555AFF05}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8304F3D4-51E5-4ED6-90F9-1843555AFF05}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8304F3D4-51E5-4ED6-90F9-1843555AFF05}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8304F3D4-51E5-4ED6-90F9-1843555AFF05}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

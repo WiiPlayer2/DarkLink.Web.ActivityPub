@@ -6,4 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\DarkLink.Web.WebFinger.Server\DarkLink.Web.WebFinger.Server.csproj" />
+  </ItemGroup>
+
 </Project>
