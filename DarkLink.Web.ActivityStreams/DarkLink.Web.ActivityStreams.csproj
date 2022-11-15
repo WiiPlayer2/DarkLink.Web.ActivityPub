@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\DarkLink.Web.ActivityVocabulary\DarkLink.Web.ActivityVocabulary.csproj" />
+  </ItemGroup>
+
 </Project>

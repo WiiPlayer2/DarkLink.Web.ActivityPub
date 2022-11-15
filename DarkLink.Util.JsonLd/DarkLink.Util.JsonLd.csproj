@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<OutputType>Exe</OutputType>
 		<TargetFramework>net6.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
@@ -13,9 +12,6 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\DarkLink.Text.Json.NewtonsoftJsonMapper\DarkLink.Text.Json.NewtonsoftJsonMapper.csproj" />
-		<ProjectReference Include="..\DarkLink.Util.JsonLd\DarkLink.Util.JsonLd.csproj" />
-		<ProjectReference Include="..\DarkLink.Web.ActivityStreams\DarkLink.Web.ActivityStreams.csproj" />
-		<ProjectReference Include="..\DarkLink.Web.WebFinger.Client\DarkLink.Web.WebFinger.Client.csproj" />
 	</ItemGroup>
 
 </Project>
