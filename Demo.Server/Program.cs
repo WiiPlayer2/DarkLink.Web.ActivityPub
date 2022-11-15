@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using System.Net;
 using DarkLink.Web.WebFinger.Server;
@@ -40,7 +41,7 @@ internal class ResourceDescriptorProvider : IResourceDescriptorProvider
         {
             Subject = new Uri("acct:me@devtunnel.dark-link.info"),
             Links = ImmutableList.Create(
-                Link.Create("http://webfinger.net/rel/profile-page") with
+                Link.Create(Constants.RELATION_PROFILE_PAGE) with
                 {
                     Type = "text/html",
                     Href = new Uri("https://devtunnel.dark-link.info/profile"),

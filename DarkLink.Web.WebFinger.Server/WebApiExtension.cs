@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using DarkLink.Web.WebFinger.Shared;
@@ -10,10 +11,6 @@ namespace DarkLink.Web.WebFinger.Server;
 
 public static class WebApiExtension
 {
-    private const string WEBFINGER_MEDIATYPE = "application/jrd+json";
-
-    private const string WEBFINGER_PATH = "/.well-known/webfinger";
-
     public static void AddWebFinger<TResourceDescriptorProvider>(this IServiceCollection services)
         where TResourceDescriptorProvider : class, IResourceDescriptorProvider
     {
@@ -24,7 +21,7 @@ public static class WebApiExtension
     {
         var resourceDescriptorProvider = app.ApplicationServices.GetRequiredService<IResourceDescriptorProvider>();
         app.Map(
-            WEBFINGER_PATH,
+            Constants.HTTP_PATH,
             app => app.Run(async ctx =>
             {
                 if (!ctx.Request.Query.TryGetValue("resource", out var resourceRaw)
@@ -41,22 +38,21 @@ public static class WebApiExtension
                 if (descriptor is null)
                 {
                     ctx.Response.StatusCode = (int) HttpStatusCode.NotFound;
+                    return;
                 }
-                else
-                {
-                    ctx.Response.Headers.ContentType = WEBFINGER_MEDIATYPE;
-                    await ctx.Response.WriteAsJsonAsync(
-                        descriptor,
-                        new JsonSerializerOptions
+
+                await ctx.Response.WriteAsJsonAsync(
+                    descriptor,
+                    new JsonSerializerOptions
+                    {
+                        Converters =
                         {
-                            Converters =
-                            {
-                                new JsonResourceDescriptorConverter(),
-                            },
-                            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+                            new JsonResourceDescriptorConverter(),
                         },
-                        ctx.RequestAborted);
-                }
+                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+                    },
+                    Constants.MEDIA_TYPE,
+                    ctx.RequestAborted);
             }));
     }
 }
