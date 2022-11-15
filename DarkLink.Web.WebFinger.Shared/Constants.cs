@@ -8,6 +8,10 @@ public static class Constants
 
     public const string MEDIA_TYPE = "application/jrd+json";
 
+    public const string QUERY_RELATION = "rel";
+
+    public const string QUERY_RESOURCE = "resource";
+
     public const string RELATION_AVATAR = "http://webfinger.net/rel/avatar";
 
     public const string RELATION_PROFILE_PAGE = "http://webfinger.net/rel/profile-page";

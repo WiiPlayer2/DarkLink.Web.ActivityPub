@@ -24,14 +24,14 @@ public static class WebApiExtension
             Constants.HTTP_PATH,
             app => app.Run(async ctx =>
             {
-                if (!ctx.Request.Query.TryGetValue("resource", out var resourceRaw)
+                if (!ctx.Request.Query.TryGetValue(Constants.QUERY_RESOURCE, out var resourceRaw)
                     || !Uri.TryCreate(resourceRaw, UriKind.RelativeOrAbsolute, out var resource))
                 {
                     ctx.Response.StatusCode = (int) HttpStatusCode.BadRequest;
                     return;
                 }
 
-                ctx.Request.Query.TryGetValue("rel", out var relationsRaw);
+                ctx.Request.Query.TryGetValue(Constants.QUERY_RELATION, out var relationsRaw);
                 var relations = relationsRaw.ToArray();
 
                 var descriptor = await resourceDescriptorProvider.GetResourceDescriptorAsync(resource, relations, ctx.Request, ctx.RequestAborted);

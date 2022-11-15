@@ -13,11 +13,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DarkLink.Web.ActivityPub.Te
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DarkLink.Web.ActivityVocabulary", "DarkLink.Web.ActivityVocabulary\DarkLink.Web.ActivityVocabulary.csproj", "{6D060D14-3FEA-4E2A-9316-06F8BCA7B292}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo.Server", "Demo.Server\Demo.Server.csproj", "{9FD23377-BA06-4003-A548-391E85E590E1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Demo.Server", "Demo.Server\Demo.Server.csproj", "{9FD23377-BA06-4003-A548-391E85E590E1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DarkLink.Web.WebFinger.Shared", "DarkLink.Web.WebFinger.Shared\DarkLink.Web.WebFinger.Shared.csproj", "{7367A689-CCE3-46BE-9F36-DCF81857EEF6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DarkLink.Web.WebFinger.Shared", "DarkLink.Web.WebFinger.Shared\DarkLink.Web.WebFinger.Shared.csproj", "{7367A689-CCE3-46BE-9F36-DCF81857EEF6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DarkLink.Web.WebFinger.Server", "DarkLink.Web.WebFinger.Server\DarkLink.Web.WebFinger.Server.csproj", "{8304F3D4-51E5-4ED6-90F9-1843555AFF05}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DarkLink.Web.WebFinger.Server", "DarkLink.Web.WebFinger.Server\DarkLink.Web.WebFinger.Server.csproj", "{8304F3D4-51E5-4ED6-90F9-1843555AFF05}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WebFinger", "WebFinger", "{92C74162-C9DE-4134-963B-508643F27E57}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DarkLink.Web.WebFinger.Client", "DarkLink.Web.WebFinger.Client\DarkLink.Web.WebFinger.Client.csproj", "{7C196AFD-2326-4422-B0C8-9630839700A3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -57,9 +61,18 @@ Global
 		{8304F3D4-51E5-4ED6-90F9-1843555AFF05}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8304F3D4-51E5-4ED6-90F9-1843555AFF05}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8304F3D4-51E5-4ED6-90F9-1843555AFF05}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7C196AFD-2326-4422-B0C8-9630839700A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C196AFD-2326-4422-B0C8-9630839700A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C196AFD-2326-4422-B0C8-9630839700A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C196AFD-2326-4422-B0C8-9630839700A3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{7367A689-CCE3-46BE-9F36-DCF81857EEF6} = {92C74162-C9DE-4134-963B-508643F27E57}
+		{8304F3D4-51E5-4ED6-90F9-1843555AFF05} = {92C74162-C9DE-4134-963B-508643F27E57}
+		{7C196AFD-2326-4422-B0C8-9630839700A3} = {92C74162-C9DE-4134-963B-508643F27E57}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0E97A99A-6977-46EF-BE47-06881E7AC43D}
