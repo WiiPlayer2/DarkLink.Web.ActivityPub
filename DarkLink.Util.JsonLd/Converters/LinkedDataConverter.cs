@@ -26,6 +26,13 @@ internal class LinkedDataConverter : JsonConverterFactory
             var properties = typeof(T).GetProperties();
             var values = properties.Select(MapProperty);
             var node = new JsonObject(values);
+
+            if (metadata.Type is not null && properties.All(p => ResolvePropertyName(p) != "@type"))
+            {
+                var fullType = $"{metadata.Path}{metadata.Type}";
+                node["@type"] = fullType;
+            }
+
             JsonSerializer.Serialize(writer, node, options);
 
             KeyValuePair<string, JsonNode?> MapProperty(PropertyInfo propertyInfo)

@@ -26,7 +26,6 @@ app.MapGet("/profile.json", async ctx =>
 
     var person = new Person(
         new Uri("https://devtunnel.dark-link.info/profile.json"),
-        new Uri("https://www.w3.org/ns/activitystreams#Person"),
         new Uri("https://devtunnel.dark-link.info/inbox"),
         new Uri("https://devtunnel.dark-link.info/outbox"),
         USER,
@@ -36,7 +35,6 @@ app.MapGet("/profile.json", async ctx =>
         DataList.FromItems(new Image[]
         {
             new(
-                new Uri("https://www.w3.org/ns/activitystreams#Image"),
                 "image/png",
                 new Uri("https://assets.tech.lgbt/accounts/avatars/109/318/341/050/998/934/original/4bee8ed06d7c83b9.png")),
         }));
@@ -129,10 +127,9 @@ internal class ResourceDescriptorProvider : IResourceDescriptorProvider
     }
 }
 
-[LinkedData("https://www.w3.org/ns/activitystreams#")]
+[LinkedData("https://www.w3.org/ns/activitystreams#", "Person")]
 internal record Person(
     Uri Id,
-    Uri Type,
     Uri Inbox,
     Uri Outbox,
     string PreferredUsername,
@@ -141,8 +138,7 @@ internal record Person(
     Uri Url,
     DataList<Image> Icon);
 
-[LinkedData("https://www.w3.org/ns/activitystreams#")]
+[LinkedData("https://www.w3.org/ns/activitystreams#", "Image")]
 internal record Image(
-    Uri Type,
     string MediaType,
     Uri Url);
