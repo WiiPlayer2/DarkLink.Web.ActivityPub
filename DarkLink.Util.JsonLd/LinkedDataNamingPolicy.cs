@@ -10,7 +10,7 @@ internal class LinkedDataNamingPolicy<T> : JsonNamingPolicy
 
     private LinkedDataNamingPolicy()
     {
-        basePath = typeof(T).GetCustomAttribute<LinkedDataAttribute>()?.BasePath ?? string.Empty;
+        basePath = typeof(T).GetCustomAttribute<LinkedDataAttribute>()?.Path ?? string.Empty;
     }
 
     public static LinkedDataNamingPolicy<T> Instance { get; } = new();
@@ -24,5 +24,15 @@ internal class LinkedDataNamingPolicy<T> : JsonNamingPolicy
             _ => GetPropertyName(name),
         };
 
-    private string GetPropertyName(string property) => $"{basePath}#{property}";
+    private string GetPropertyName(string property)
+    {
+        var propertyName = typeof(T).GetProperty(property)?.GetCustomAttribute<LinkedDataAttribute>()?.Path ?? Uncapitalize(property);
+        var fullName = $"{basePath}{propertyName}";
+        return fullName;
+    }
+
+    private string Uncapitalize(string s)
+        => s == string.Empty
+            ? string.Empty
+            : $"{char.ToLowerInvariant(s[0])}{s[1..]}";
 }

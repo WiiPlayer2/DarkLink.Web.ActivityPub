@@ -1,12 +1,14 @@
-﻿namespace DarkLink.Util.JsonLd;
+﻿using System;
 
-[AttributeUsage(AttributeTargets.Class, Inherited = false)]
+namespace DarkLink.Util.JsonLd;
+
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Property, Inherited = false)]
 public sealed class LinkedDataAttribute : Attribute
 {
-    public LinkedDataAttribute(string? basePath = default)
+    public LinkedDataAttribute(string? path = default)
     {
-        BasePath = basePath;
+        Path = path;
     }
 
-    public string? BasePath { get; }
+    public string? Path { get; }
 }

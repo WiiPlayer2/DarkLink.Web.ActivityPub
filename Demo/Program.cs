@@ -39,13 +39,13 @@ Console.WriteLine(LINE);
 
 Console.WriteLine("done.");
 
-[LinkedData("https://www.w3.org/ns/activitystreams")]
+[LinkedData("https://www.w3.org/ns/activitystreams#")]
 public record OrderedCollection(
     Uri Id,
     Typed<int> TotalItems,
     LinkOr<object> First);
 
-[LinkedData("https://www.w3.org/ns/activitystreams")]
+[LinkedData("https://www.w3.org/ns/activitystreams#")]
 public record Person(
     Uri Id,
     IReadOnlyList<Uri> Type,
