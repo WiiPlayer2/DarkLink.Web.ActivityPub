@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace DarkLink.Util.JsonLd;
@@ -43,7 +44,10 @@ internal class LinkedDataConverter : JsonConverterFactory
 
         public override void Write(Utf8JsonWriter writer, IReadOnlyList<T> value, JsonSerializerOptions options)
         {
-            throw new NotImplementedException();
+            if (value.Count == 1)
+                JsonSerializer.Serialize(writer, value[0]);
+            else
+                JsonSerializer.Serialize(writer, value);
         }
     }
 }

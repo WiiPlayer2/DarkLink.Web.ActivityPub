@@ -19,7 +19,7 @@ const string LINE = "----------------------------------------";
 //var json = await (await httpClient.SendAsync(request)).Content.ReadAsStringAsync();
 //await File.WriteAllTextAsync("./outbox.json", json);
 
-var json = await File.ReadAllTextAsync("./outbox.json");
+var json = await File.ReadAllTextAsync("./person.json");
 var compact = JObject.Parse(json).Map();
 var expanded = JsonLdProcessor.Expand(compact.Map()).First().Map()!;
 var recompacted = expanded.Compact(new JsonObject());
@@ -31,7 +31,11 @@ Console.WriteLine(recompacted);
 Console.WriteLine(LINE);
 
 var serializer = new JsonLdSerializer();
-var poco = serializer.Deserialize<OrderedCollection>(compact);
+var poco = serializer.Deserialize<Person>(compact);
+var node = serializer.Serialize(poco);
+
+Console.WriteLine(node);
+Console.WriteLine(LINE);
 
 Console.WriteLine("done.");
 

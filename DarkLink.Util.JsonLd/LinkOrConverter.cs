@@ -40,7 +40,10 @@ internal class LinkOrConverter : JsonConverterFactory
 
         public override void Write(Utf8JsonWriter writer, LinkOr<T> value, JsonSerializerOptions options)
         {
-            throw new NotImplementedException();
+            if (value is Link<T> link)
+                JsonSerializer.Serialize(writer, new LinkDto(link.Uri), options);
+            else
+                throw new NotImplementedException();
         }
 
         private record LinkDto([property: JsonPropertyName("@id")] Uri Id);

@@ -8,8 +8,16 @@ public class JsonLdSerializer
 {
     public T? Deserialize<T>(JsonNode node, JsonSerializerOptions? options = default)
     {
-        options ??= new JsonSerializerOptions();
-        options = new JsonSerializerOptions(options)
+        options = Prepare<T>(options);
+
+        var expanded = node.Expand();
+        var context = new JsonObject();
+        var compacted = expanded.Compact(context);
+        return compacted.Deserialize<T>(options);
+    }
+
+    private static JsonSerializerOptions Prepare<T>(JsonSerializerOptions? options) =>
+        new(options ?? new JsonSerializerOptions())
         {
             Converters =
             {
@@ -20,9 +28,10 @@ public class JsonLdSerializer
             PropertyNameCaseInsensitive = true,
         };
 
-        var expanded = node.Expand();
-        var context = new JsonObject();
-        var compacted = expanded.Compact(context);
-        return compacted.Deserialize<T>(options);
+    public JsonNode? Serialize<T>(T obj, JsonSerializerOptions? options = default)
+    {
+        options = Prepare<T>(options);
+
+        return JsonSerializer.SerializeToNode(obj, options);
     }
 }
