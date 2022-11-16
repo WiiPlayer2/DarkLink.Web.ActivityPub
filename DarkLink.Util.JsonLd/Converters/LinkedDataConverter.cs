@@ -2,8 +2,9 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using DarkLink.Util.JsonLd.Attributes;
 
-namespace DarkLink.Util.JsonLd;
+namespace DarkLink.Util.JsonLd.Converters;
 
 internal class LinkedDataConverter : JsonConverterFactory
 {

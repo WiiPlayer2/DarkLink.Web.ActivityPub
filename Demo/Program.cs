@@ -1,8 +1,8 @@
-﻿using System;
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using DarkLink.Text.Json.NewtonsoftJsonMapper;
 using DarkLink.Util.JsonLd;
+using DarkLink.Util.JsonLd.Types;
 using JsonLD.Core;
 using Newtonsoft.Json.Linq;
 

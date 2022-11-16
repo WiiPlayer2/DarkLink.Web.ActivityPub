@@ -2,6 +2,7 @@
 using System.Net;
 using System.Text.Json.Nodes;
 using DarkLink.Util.JsonLd;
+using DarkLink.Util.JsonLd.Attributes;
 using DarkLink.Web.WebFinger.Server;
 using DarkLink.Web.WebFinger.Shared;
 using Microsoft.AspNetCore.Http.Extensions;

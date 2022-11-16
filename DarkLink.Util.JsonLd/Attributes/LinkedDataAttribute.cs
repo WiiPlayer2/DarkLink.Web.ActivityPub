@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace DarkLink.Util.JsonLd;
+﻿namespace DarkLink.Util.JsonLd.Attributes;
 
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Property, Inherited = false)]
 public sealed class LinkedDataAttribute : Attribute

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace DarkLink.Util.JsonLd;
+﻿namespace DarkLink.Util.JsonLd.Types;
 
 public sealed record Link<T>(Uri Uri) : LinkOr<T>
 {
