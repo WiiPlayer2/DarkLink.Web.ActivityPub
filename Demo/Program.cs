@@ -1,4 +1,7 @@
-﻿using DarkLink.Text.Json.NewtonsoftJsonMapper;
+﻿using System;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
+using DarkLink.Text.Json.NewtonsoftJsonMapper;
 using DarkLink.Util.JsonLd;
 using JsonLD.Core;
 using Newtonsoft.Json.Linq;
@@ -6,38 +9,45 @@ using Newtonsoft.Json.Linq;
 const string LINE = "----------------------------------------";
 
 //using var httpClient = new HttpClient();
-//using var webFingerClient = new WebFingerClient(httpClient);
-//var descriptor = await webFingerClient.GetResourceDescriptorAsync("tech.lgbt", new Uri("acct:wiiplayer2@tech.lgbt"));
-//if (descriptor is null)
-//    return;
-
-//var selfLink = descriptor.Links.First(o => o.Relation == "self");
-//var request = new HttpRequestMessage(HttpMethod.Get, selfLink.Href!)
+//var request = new HttpRequestMessage(HttpMethod.Get, "https://tech.lgbt/users/wiiplayer2/outbox")
 //{
 //    Headers =
 //    {
-//        Accept = {MediaTypeWithQualityHeaderValue.Parse(selfLink.Type),},
+//        Accept = {MediaTypeWithQualityHeaderValue.Parse("application/json"),},
 //    },
 //};
-//var personJson = await (await httpClient.SendAsync(request)).Content.ReadAsStringAsync();
-//await File.WriteAllTextAsync("./person.json", personJson);
+//var json = await (await httpClient.SendAsync(request)).Content.ReadAsStringAsync();
+//await File.WriteAllTextAsync("./outbox.json", json);
 
-var personJson = await File.ReadAllTextAsync("./person.json");
-var personCompact = JObject.Parse(personJson).Map();
-var personExpanded = JsonLdProcessor.Expand(personCompact.Map()).First().Map()!;
-Console.WriteLine(personCompact);
+var json = await File.ReadAllTextAsync("./outbox.json");
+var compact = JObject.Parse(json).Map();
+var expanded = JsonLdProcessor.Expand(compact.Map()).First().Map()!;
+var recompacted = expanded.Compact(new JsonObject());
+Console.WriteLine(compact);
 Console.WriteLine(LINE);
-Console.WriteLine(personExpanded);
+Console.WriteLine(expanded);
+Console.WriteLine(LINE);
+Console.WriteLine(recompacted);
 Console.WriteLine(LINE);
 
 var serializer = new JsonLdSerializer();
-var person = serializer.Deserialize<Person>(personCompact);
+var poco = serializer.Deserialize<OrderedCollection>(compact);
 
 Console.WriteLine("done.");
+
+[LinkedData("https://www.w3.org/ns/activitystreams")]
+public record OrderedCollection(
+    Uri Id,
+    Typed<int> TotalItems,
+    LinkOr<object> First);
 
 [LinkedData("https://www.w3.org/ns/activitystreams")]
 public record Person(
     Uri Id,
     IReadOnlyList<Uri> Type,
     string Summary,
-    IReadOnlyList<object> Attachment);
+    [property: JsonPropertyName("http://joinmastodon.org/ns#featured")]
+    IReadOnlyList<object> Featured);
+
+[LinkedData]
+public record Typed<T>(Uri Type, T Value);

@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Reflection;
 using System.Text.Json;
 
 namespace DarkLink.Util.JsonLd;
@@ -19,6 +20,7 @@ internal class LinkedDataNamingPolicy<T> : JsonNamingPolicy
         {
             "id" => "@id",
             "type" => "@type",
+            "value" => "@value",
             _ => GetPropertyName(name),
         };
 
