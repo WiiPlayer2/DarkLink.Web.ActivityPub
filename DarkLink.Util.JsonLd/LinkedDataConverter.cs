@@ -1,5 +1,6 @@
-﻿using System;
+﻿using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
 namespace DarkLink.Util.JsonLd;
@@ -10,44 +11,45 @@ internal class LinkedDataConverter : JsonConverterFactory
 
     public static LinkedDataConverter Instance { get; } = new();
 
-    public override bool CanConvert(Type typeToConvert) => typeToConvert.IsGenericType && typeToConvert.GetGenericTypeDefinition() == typeof(IReadOnlyList<>);
+    public override bool CanConvert(Type typeToConvert) => typeToConvert.GetCustomAttribute<LinkedDataAttribute>() is not null;
 
-    public override JsonConverter? CreateConverter(Type typeToConvert, JsonSerializerOptions options)
+    public override JsonConverter? CreateConverter(Type typeToConvert, JsonSerializerOptions options) => typeof(Conv<>).Create<JsonConverter>(typeToConvert);
+
+    private class Conv<T> : JsonConverter<T>
     {
-        var itemType = typeToConvert.GenericTypeArguments[0];
-        var converterType = typeof(Conv<>).MakeGenericType(itemType);
-        var converter = (JsonConverter) Activator.CreateInstance(converterType)!;
-        return converter;
-    }
+        public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => throw new NotImplementedException();
 
-    private class Conv<T> : JsonConverter<IReadOnlyList<T>>
-    {
-        public override IReadOnlyList<T>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-            => reader.TokenType == JsonTokenType.StartArray
-                ? ReadEnumerable(ref reader, options)
-                : ReadSingle(ref reader, options);
-
-        private IReadOnlyList<T> ReadEnumerable(ref Utf8JsonReader reader, JsonSerializerOptions options)
+        public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
         {
-            var list = new List<T>();
-            reader.Read();
-            while (reader.TokenType != JsonTokenType.EndArray) throw new NotImplementedException();
+            var metadata = typeof(T).GetCustomAttribute<LinkedDataAttribute>()!;
+            var properties = typeof(T).GetProperties();
+            var values = properties.Select(MapProperty);
+            var node = new JsonObject(values);
+            JsonSerializer.Serialize(writer, node, options);
 
-            return list;
-        }
+            KeyValuePair<string, JsonNode?> MapProperty(PropertyInfo propertyInfo)
+            {
+                var name = ResolvePropertyName(propertyInfo);
+                var propertyValue = propertyInfo.GetValue(value);
+                var node = JsonSerializer.SerializeToNode(propertyValue, options);
+                return new KeyValuePair<string, JsonNode?>(name, node);
+            }
 
-        private IReadOnlyList<T> ReadSingle(ref Utf8JsonReader reader, JsonSerializerOptions options)
-        {
-            var value = JsonSerializer.Deserialize<T>(ref reader, options);
-            return value is null ? Array.Empty<T>() : new[] {value,};
-        }
+            string ResolvePropertyName(PropertyInfo propertyInfo)
+            {
+                var propertyNameAttribute = propertyInfo.GetCustomAttribute<JsonPropertyNameAttribute>();
+                if (propertyNameAttribute is not null)
+                    return propertyNameAttribute.Name;
 
-        public override void Write(Utf8JsonWriter writer, IReadOnlyList<T> value, JsonSerializerOptions options)
-        {
-            if (value.Count == 1)
-                JsonSerializer.Serialize(writer, value[0]);
-            else
-                JsonSerializer.Serialize(writer, value);
+                if (propertyInfo.Name.Equals("id", StringComparison.InvariantCultureIgnoreCase))
+                    return "@id";
+
+                if (propertyInfo.Name.Equals("type", StringComparison.InvariantCultureIgnoreCase))
+                    return "@type";
+
+                var name = $"{metadata.Path}{propertyInfo.Name.Uncapitalize()}";
+                return name;
+            }
         }
     }
 }

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace DarkLink.Util.JsonLd;
@@ -22,16 +21,19 @@ public class JsonLdSerializer
             Converters =
             {
                 LinkedDataConverter.Instance,
+                MultipleLinkedDataConverter.Instance,
                 LinkOrConverter.Instance,
             },
-            PropertyNamingPolicy = LinkedDataNamingPolicy<T>.Instance,
-            PropertyNameCaseInsensitive = true,
         };
 
-    public JsonNode? Serialize<T>(T obj, JsonSerializerOptions? options = default)
+    public JsonNode? Serialize<T>(T obj, JsonNode? context = default, JsonSerializerOptions? options = default)
     {
         options = Prepare<T>(options);
+        context ??= new JsonObject();
 
-        return JsonSerializer.SerializeToNode(obj, options);
+        var node = JsonSerializer.SerializeToNode(obj, options);
+        var compacted = node?.Compact(context);
+        return compacted;
+        //return node;
     }
 }

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
 using Newtonsoft.Json.Linq;
 
 namespace DarkLink.Text.Json.NewtonsoftJsonMapper;
@@ -43,5 +42,5 @@ public static class Mapper
     public static JValue Map(this JsonValue? value)
         => value is null
             ? JValue.CreateNull()
-            : new JValue(value.GetValue<object>());
+            : (JValue) JToken.Parse(value.ToJsonString());
 }
