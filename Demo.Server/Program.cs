@@ -1,9 +1,13 @@
 using System;
 using System.Collections.Immutable;
 using System.Net;
+using System.Text.Json.Nodes;
+using DarkLink.Util.JsonLd;
 using DarkLink.Web.WebFinger.Server;
 using DarkLink.Web.WebFinger.Shared;
+using JsonLD.Util;
 using Microsoft.AspNetCore.Http.Extensions;
+using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddWebFinger<ResourceDescriptorProvider>();
@@ -13,6 +17,30 @@ app.UseWebFinger();
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
 
 app.MapGet("/profile", () => "Welcome to my profile.");
+
+app.MapGet("/profile.json", async ctx =>
+{
+    var person = new Person(
+        new("https://devtunnel.dark-link.info/profile.json"),
+        new("https://www.w3.org/ns/activitystreams#Person"),
+        "me",
+        "Waldemar Tomme",
+        "Me testing here.",
+        new("https://devtunnel.dark-link.info/profile"),
+        new Image[]
+        {
+            new(
+                new("https://www.w3.org/ns/activitystreams#Image"),
+                "image/png",
+                new("https://assets.tech.lgbt/accounts/avatars/109/318/341/050/998/934/original/4bee8ed06d7c83b9.png")),
+        });
+
+    var context = new JsonArray(JsonValue.Create("https://www.w3.org/ns/activitystreams"));
+    var node = new JsonLdSerializer().Serialize(person);
+
+    ctx.Response.Headers.ContentType = "application/activity+json";
+    await ctx.Response.WriteAsync(node?.ToString() ?? string.Empty, ctx.RequestAborted);
+});
 
 app.MapMethods(
     "/{*path}",
@@ -45,8 +73,29 @@ internal class ResourceDescriptorProvider : IResourceDescriptorProvider
                 {
                     Type = "text/html",
                     Href = new Uri("https://devtunnel.dark-link.info/profile"),
+                },
+                Link.Create("self") with
+                {
+                    Type = "application/activity+json",
+                    Href = new Uri("https://devtunnel.dark-link.info/profile.json"),
                 }),
         };
         return Task.FromResult<JsonResourceDescriptor?>(descriptor);
     }
 }
+
+[LinkedData("https://www.w3.org/ns/activitystreams#")]
+internal record Person(
+    Uri Id,
+    Uri Type,
+    string PreferredUsername,
+    string Name,
+    string Summary,
+    Uri Url,
+    IReadOnlyList<Image> Icon);
+
+[LinkedData("https://www.w3.org/ns/activitystreams#")]
+internal record Image(
+    Uri Type,
+    string MediaType,
+    Uri Url);
