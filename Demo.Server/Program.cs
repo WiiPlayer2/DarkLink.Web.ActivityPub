@@ -3,6 +3,7 @@ using System.Net;
 using System.Text.Json.Nodes;
 using DarkLink.Util.JsonLd;
 using DarkLink.Util.JsonLd.Attributes;
+using DarkLink.Util.JsonLd.Types;
 using DarkLink.Web.WebFinger.Server;
 using DarkLink.Web.WebFinger.Shared;
 using Microsoft.AspNetCore.Http.Extensions;
@@ -32,13 +33,13 @@ app.MapGet("/profile.json", async ctx =>
         "Waldemar Tomme",
         "Me testing here.",
         new Uri("https://devtunnel.dark-link.info/profile"),
-        new Image[]
+        DataList.FromItems(new Image[]
         {
             new(
                 new Uri("https://www.w3.org/ns/activitystreams#Image"),
                 "image/png",
                 new Uri("https://assets.tech.lgbt/accounts/avatars/109/318/341/050/998/934/original/4bee8ed06d7c83b9.png")),
-        });
+        }));
 
     //var context = new JsonArray(JsonValue.Create("https://www.w3.org/ns/activitystreams"));
     var context = JsonNode.Parse(@"[
@@ -138,7 +139,7 @@ internal record Person(
     string Name,
     string Summary,
     Uri Url,
-    IReadOnlyList<Image> Icon);
+    DataList<Image> Icon);
 
 [LinkedData("https://www.w3.org/ns/activitystreams#")]
 internal record Image(

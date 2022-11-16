@@ -22,7 +22,7 @@ public class JsonLdSerializer
             Converters =
             {
                 LinkedDataConverter.Instance,
-                MultipleLinkedDataConverter.Instance,
+                DataListConverter.Instance,
                 LinkOrConverter.Instance,
             },
         };
