@@ -5,13 +5,9 @@ VisualStudioVersion = 17.4.33103.184
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DarkLink.Web.ActivityPub", "DarkLink.Web.ActivityPub\DarkLink.Web.ActivityPub.csproj", "{0ACB9903-41E7-40B8-A5D7-98E7507751D2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DarkLink.Web.ActivityStreams", "DarkLink.Web.ActivityStreams\DarkLink.Web.ActivityStreams.csproj", "{B4F46855-D4DB-494F-AACF-6999474D0AF8}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Demo", "Demo\Demo.csproj", "{FCBBF3B2-1C0E-458B-AC35-76AF7683EF6B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DarkLink.Web.ActivityPub.Tests", "DarkLink.Web.ActivityPub.Tests\DarkLink.Web.ActivityPub.Tests.csproj", "{C1DCB4D1-B33B-44C6-A497-FAD67D4CB229}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DarkLink.Web.ActivityVocabulary", "DarkLink.Web.ActivityVocabulary\DarkLink.Web.ActivityVocabulary.csproj", "{6D060D14-3FEA-4E2A-9316-06F8BCA7B292}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Demo.Server", "Demo.Server\Demo.Server.csproj", "{9FD23377-BA06-4003-A548-391E85E590E1}"
 EndProject
@@ -27,7 +23,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Util", "Util", "{AAACD007-6
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DarkLink.Text.Json.NewtonsoftJsonMapper", "DarkLink.Text.Json.NewtonsoftJsonMapper\DarkLink.Text.Json.NewtonsoftJsonMapper.csproj", "{114B6891-7781-4FF4-87BC-30F85042FD22}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DarkLink.Util.JsonLd", "DarkLink.Util.JsonLd\DarkLink.Util.JsonLd.csproj", "{3BB1E464-F08E-4528-B7A7-31A13E151BF9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DarkLink.Util.JsonLd", "DarkLink.Util.JsonLd\DarkLink.Util.JsonLd.csproj", "{3BB1E464-F08E-4528-B7A7-31A13E151BF9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,10 +35,6 @@ Global
 		{0ACB9903-41E7-40B8-A5D7-98E7507751D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0ACB9903-41E7-40B8-A5D7-98E7507751D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0ACB9903-41E7-40B8-A5D7-98E7507751D2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B4F46855-D4DB-494F-AACF-6999474D0AF8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B4F46855-D4DB-494F-AACF-6999474D0AF8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B4F46855-D4DB-494F-AACF-6999474D0AF8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B4F46855-D4DB-494F-AACF-6999474D0AF8}.Release|Any CPU.Build.0 = Release|Any CPU
 		{FCBBF3B2-1C0E-458B-AC35-76AF7683EF6B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{FCBBF3B2-1C0E-458B-AC35-76AF7683EF6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FCBBF3B2-1C0E-458B-AC35-76AF7683EF6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -51,10 +43,6 @@ Global
 		{C1DCB4D1-B33B-44C6-A497-FAD67D4CB229}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C1DCB4D1-B33B-44C6-A497-FAD67D4CB229}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C1DCB4D1-B33B-44C6-A497-FAD67D4CB229}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6D060D14-3FEA-4E2A-9316-06F8BCA7B292}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6D060D14-3FEA-4E2A-9316-06F8BCA7B292}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6D060D14-3FEA-4E2A-9316-06F8BCA7B292}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6D060D14-3FEA-4E2A-9316-06F8BCA7B292}.Release|Any CPU.Build.0 = Release|Any CPU
 		{9FD23377-BA06-4003-A548-391E85E590E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9FD23377-BA06-4003-A548-391E85E590E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9FD23377-BA06-4003-A548-391E85E590E1}.Release|Any CPU.ActiveCfg = Release|Any CPU

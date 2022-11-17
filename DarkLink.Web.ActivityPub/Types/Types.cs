@@ -1,8 +1,8 @@
 ﻿using DarkLink.Util.JsonLd.Attributes;
 using DarkLink.Util.JsonLd.Types;
-using DarkLink.Web.ActivityVocabulary.Extended;
+using DarkLink.Web.ActivityPub.Types.Extended;
 
-namespace DarkLink.Web.ActivityVocabulary;
+namespace DarkLink.Web.ActivityPub.Types;
 
 public static class Constants
 {

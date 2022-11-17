@@ -3,11 +3,11 @@ using System.Net;
 using System.Text.Json.Nodes;
 using DarkLink.Util.JsonLd;
 using DarkLink.Util.JsonLd.Types;
-using DarkLink.Web.ActivityVocabulary.Extended;
+using DarkLink.Web.ActivityPub.Types.Extended;
 using DarkLink.Web.WebFinger.Server;
 using DarkLink.Web.WebFinger.Shared;
 using Microsoft.AspNetCore.Http.Extensions;
-using ASLink = DarkLink.Web.ActivityVocabulary.Link;
+using ASLink = DarkLink.Web.ActivityPub.Types.Link;
 
 const string USER = ResourceDescriptorProvider.USER;
 

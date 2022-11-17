@@ -12,9 +12,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\DarkLink.Text.Json.NewtonsoftJsonMapper\DarkLink.Text.Json.NewtonsoftJsonMapper.csproj" />
-		<ProjectReference Include="..\DarkLink.Util.JsonLd\DarkLink.Util.JsonLd.csproj" />
-		<ProjectReference Include="..\DarkLink.Web.ActivityStreams\DarkLink.Web.ActivityStreams.csproj" />
+		<ProjectReference Include="..\DarkLink.Web.ActivityPub\DarkLink.Web.ActivityPub.csproj" />
 		<ProjectReference Include="..\DarkLink.Web.WebFinger.Client\DarkLink.Web.WebFinger.Client.csproj" />
 	</ItemGroup>
 

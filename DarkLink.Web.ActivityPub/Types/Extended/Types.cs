@@ -1,6 +1,6 @@
 ﻿using DarkLink.Util.JsonLd.Attributes;
 
-namespace DarkLink.Web.ActivityVocabulary.Extended;
+namespace DarkLink.Web.ActivityPub.Types.Extended;
 
 [LinkedData(Constants.NAMESPACE)]
 public record Person : Object;
