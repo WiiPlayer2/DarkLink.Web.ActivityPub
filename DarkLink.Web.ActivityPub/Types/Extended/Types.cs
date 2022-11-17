@@ -21,3 +21,9 @@ public record Document : Object;
 
 [LinkedData(Constants.NAMESPACE)]
 public record Image : Document;
+
+[LinkedData(Constants.NAMESPACE)]
+public record TypedActivity(Uri Type) : Activity;
+
+[LinkedData(Constants.NAMESPACE)]
+public record TypedObject(Uri Type) : Object;

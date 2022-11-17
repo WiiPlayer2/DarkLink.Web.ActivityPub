@@ -4,7 +4,7 @@ using DarkLink.Web.WebFinger.Shared;
 
 internal class ResourceDescriptorProvider : IResourceDescriptorProvider
 {
-    public const string USER = "me";
+    public const string USER = "dev2";
 
     public Task<JsonResourceDescriptor?> GetResourceDescriptorAsync(Uri resource, IReadOnlyList<string> relations, HttpRequest request, CancellationToken cancellationToken)
     {

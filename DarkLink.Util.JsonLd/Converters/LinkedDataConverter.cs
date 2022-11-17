@@ -22,14 +22,17 @@ internal class LinkedDataConverter : JsonConverterFactory
 
         public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
         {
-            var metadata = typeof(T).GetCustomAttribute<LinkedDataAttribute>()!;
-            var properties = typeof(T).GetProperties();
-            var values = properties.Select(MapProperty).Where(o => o.Value is not null);
+            var valueType = value?.GetType() ?? typeof(T);
+            var metadata = valueType.GetCustomAttribute<LinkedDataAttribute>()!;
+            var properties = valueType.GetProperties();
+            var values = properties
+                .Select(MapProperty)
+                .Where(o => o.Value is not null);
             var node = new JsonObject(values);
 
-            if (properties.All(p => ResolvePropertyName(p) != "@type"))
+            if (!node.ContainsKey("@type"))
             {
-                var typeName = metadata.Type ?? typeof(T).Name;
+                var typeName = metadata.Type ?? valueType.Name;
                 var fullType = $"{metadata.Path}{typeName}";
                 node["@type"] = fullType;
             }

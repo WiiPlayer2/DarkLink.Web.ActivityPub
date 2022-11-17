@@ -2,10 +2,12 @@
 using System.Text.Json.Nodes;
 using DarkLink.Util.JsonLd;
 using DarkLink.Util.JsonLd.Types;
+using DarkLink.Web.ActivityPub.Types;
 using DarkLink.Web.ActivityPub.Types.Extended;
 using DarkLink.Web.WebFinger.Server;
 using Microsoft.AspNetCore.Http.Extensions;
 using ASLink = DarkLink.Web.ActivityPub.Types.Link;
+using Object = DarkLink.Web.ActivityPub.Types.Object;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddWebFinger<ResourceDescriptorProvider>();
@@ -48,6 +50,48 @@ app.MapGet("/profile.json", async ctx =>
 ]");
     var node = new JsonLdSerializer().Serialize(person, context);
 
+    await ctx.Response.WriteAsync(node?.ToString() ?? string.Empty, ctx.RequestAborted);
+});
+
+app.MapGet("/outbox", async ctx =>
+{
+    var outboxCollection = new OrderedCollection
+    {
+        TotalItems = 1,
+        OrderedItems = DataList.FromItems(new LinkOr<Object>[]
+        {
+            new Object<Object>(new TypedActivity(new Uri(Constants.NAMESPACE + "Create"))
+            {
+                Published = DateTimeOffset.Now,
+                To = DataList.From<LinkOr<Object>>(new Link<Object>(new Uri("https://www.w3.org/ns/activitystreams#Public"))),
+                Actor = DataList.From<LinkOr<Actor>>(new Link<Actor>(new Uri("https://devtunnel.dark-link.info/profile.json"))),
+                Object = DataList.From<LinkOr<Object>>(new Object<Object>(new TypedObject(new Uri(Constants.NAMESPACE + "Note"))
+                {
+                    Published = DateTimeOffset.Now,
+                    To = DataList.From<LinkOr<Object>>(new Link<Object>(new Uri("https://www.w3.org/ns/activitystreams#Public"))),
+                    Content = "henlo dere from the demo server 😏",
+                })),
+            }),
+        }),
+    };
+
+    var context = JsonNode.Parse(@"
+[
+    """ + Constants.NAMESPACE + @""",
+    {
+        ""orderedItems"": ""as:orderedItems"",
+        ""published"": ""as:published"",
+        ""startIndex"": ""as:startIndex"",
+        ""totalItems"": ""to:talItems"",
+        ""actor"": ""as:actor"",
+        ""to"": ""as:to""
+    }
+]
+");
+
+    var node = new JsonLdSerializer().Serialize(outboxCollection, context);
+
+    ctx.Response.Headers.ContentType = "application/activity+json; charset=utf-8";
     await ctx.Response.WriteAsync(node?.ToString() ?? string.Empty, ctx.RequestAborted);
 });
 

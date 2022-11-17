@@ -1,20 +1,20 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\DarkLink.Web.ActivityPub\DarkLink.Web.ActivityPub.csproj" />
-    <ProjectReference Include="..\DarkLink.Web.WebFinger.Server\DarkLink.Web.WebFinger.Server.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\DarkLink.Web.ActivityPub\DarkLink.Web.ActivityPub.csproj" />
+		<ProjectReference Include="..\DarkLink.Web.WebFinger.Server\DarkLink.Web.WebFinger.Server.csproj" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <None Update="profile.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+	<ItemGroup>
+		<None Update="profile.png">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
 
 </Project>
