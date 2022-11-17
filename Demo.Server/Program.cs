@@ -2,11 +2,12 @@
 using System.Net;
 using System.Text.Json.Nodes;
 using DarkLink.Util.JsonLd;
-using DarkLink.Util.JsonLd.Attributes;
 using DarkLink.Util.JsonLd.Types;
+using DarkLink.Web.ActivityVocabulary.Extended;
 using DarkLink.Web.WebFinger.Server;
 using DarkLink.Web.WebFinger.Shared;
 using Microsoft.AspNetCore.Http.Extensions;
+using ASLink = DarkLink.Web.ActivityVocabulary.Link;
 
 const string USER = ResourceDescriptorProvider.USER;
 
@@ -24,20 +25,33 @@ app.MapGet("/profile.json", async ctx =>
     ctx.Response.Headers.CacheControl = "max-age=0, private, must-revalidate";
     ctx.Response.Headers.ContentType = "application/activity+json; charset=utf-8";
 
-    var person = new Person(
-        new Uri("https://devtunnel.dark-link.info/profile.json"),
-        new Uri("https://devtunnel.dark-link.info/inbox"),
-        new Uri("https://devtunnel.dark-link.info/outbox"),
-        USER,
-        "Waldemar Tomme",
-        "Me testing here.",
-        new Uri("https://devtunnel.dark-link.info/profile"),
-        DataList.FromItems(new Image[]
+    //var person = new Person(
+    //    new Uri("https://devtunnel.dark-link.info/profile.json"),
+    //    new Uri("https://devtunnel.dark-link.info/inbox"),
+    //    new Uri("https://devtunnel.dark-link.info/outbox"),
+    //    USER,
+    //    "Waldemar Tomme",
+    //    "Me testing here.",
+    //    new Uri("https://devtunnel.dark-link.info/profile"),
+    //    DataList.FromItems(new Image[]
+    //    {
+    //        new(
+    //            "image/png",
+    //            new Uri("https://assets.tech.lgbt/accounts/avatars/109/318/341/050/998/934/original/4bee8ed06d7c83b9.png")),
+    //    }));
+
+    var person = new Person
+    {
+        Id = new Uri("https://devtunnel.dark-link.info/profile.json"),
+        Name = "Waldemar Tomme (DEV)",
+        Summary = "Just testing around 🧪",
+        Url = DataList.From<LinkOr<ASLink>>(new Link<ASLink>(new Uri("https://devtunnel.dark-link.info/profile"))),
+        Icon = DataList.From<LinkOr<Image>>(new Object<Image>(new Image
         {
-            new(
-                "image/png",
-                new Uri("https://assets.tech.lgbt/accounts/avatars/109/318/341/050/998/934/original/4bee8ed06d7c83b9.png")),
-        }));
+            MediaType = "image/png",
+            Url = DataList.From<LinkOr<ASLink>>(new Link<ASLink>(new Uri("https://assets.tech.lgbt/accounts/avatars/109/318/341/050/998/934/original/4bee8ed06d7c83b9.png"))),
+        })),
+    };
 
     //var context = new JsonArray(JsonValue.Create("https://www.w3.org/ns/activitystreams"));
     var context = JsonNode.Parse(@"[
@@ -127,18 +141,18 @@ internal class ResourceDescriptorProvider : IResourceDescriptorProvider
     }
 }
 
-[LinkedData("https://www.w3.org/ns/activitystreams#", "Person")]
-internal record Person(
-    Uri Id,
-    Uri Inbox,
-    Uri Outbox,
-    string PreferredUsername,
-    string Name,
-    string Summary,
-    Uri Url,
-    DataList<Image> Icon);
+//[LinkedData("https://www.w3.org/ns/activitystreams#", "Person")]
+//internal record Person(
+//    Uri Id,
+//    Uri Inbox,
+//    Uri Outbox,
+//    string PreferredUsername,
+//    string Name,
+//    string Summary,
+//    Uri Url,
+//    DataList<Image> Icon);
 
-[LinkedData("https://www.w3.org/ns/activitystreams#", "Image")]
-internal record Image(
-    string MediaType,
-    Uri Url);
+//[LinkedData("https://www.w3.org/ns/activitystreams#", "Image")]
+//internal record Image(
+//    string MediaType,
+//    Uri Url);

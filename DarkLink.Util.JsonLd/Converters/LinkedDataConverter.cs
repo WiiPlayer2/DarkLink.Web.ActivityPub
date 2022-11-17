@@ -24,12 +24,13 @@ internal class LinkedDataConverter : JsonConverterFactory
         {
             var metadata = typeof(T).GetCustomAttribute<LinkedDataAttribute>()!;
             var properties = typeof(T).GetProperties();
-            var values = properties.Select(MapProperty);
+            var values = properties.Select(MapProperty).Where(o => o.Value is not null);
             var node = new JsonObject(values);
 
-            if (metadata.Type is not null && properties.All(p => ResolvePropertyName(p) != "@type"))
+            if (properties.All(p => ResolvePropertyName(p) != "@type"))
             {
-                var fullType = $"{metadata.Path}{metadata.Type}";
+                var typeName = metadata.Type ?? typeof(T).Name;
+                var fullType = $"{metadata.Path}{typeName}";
                 node["@type"] = fullType;
             }
 

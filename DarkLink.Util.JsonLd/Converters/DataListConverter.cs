@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using DarkLink.Util.JsonLd.Types;
 
@@ -22,7 +23,7 @@ internal class DataListConverter : JsonConverterFactory
 
     private class Conv<T> : JsonConverter<DataList<T>>
     {
-        public override DataList<T>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        public override DataList<T> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
             => reader.TokenType == JsonTokenType.StartArray
                 ? ReadEnumerable(ref reader, options)
                 : ReadSingle(ref reader, options);
@@ -44,7 +45,9 @@ internal class DataListConverter : JsonConverterFactory
 
         public override void Write(Utf8JsonWriter writer, DataList<T> value, JsonSerializerOptions options)
         {
-            if (value.Count == 1)
+            if (value.Count == 0)
+                JsonSerializer.Serialize(writer, default(JsonNode), options);
+            else if (value.Count == 1)
                 JsonSerializer.Serialize(writer, value.Value, options);
             else
                 JsonSerializer.Serialize(writer, value.ToArray(), options);

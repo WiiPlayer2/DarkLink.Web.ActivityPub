@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using DarkLink.Util.JsonLd.Converters;
 
 namespace DarkLink.Util.JsonLd;
@@ -25,6 +26,7 @@ public class JsonLdSerializer
                 DataListConverter.Instance,
                 LinkOrConverter.Instance,
             },
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
         };
 
     public JsonNode? Serialize<T>(T obj, JsonNode? context = default, JsonSerializerOptions? options = default)

@@ -11,14 +11,16 @@ public static class DataList
         => new(values.ToList());
 }
 
-public class DataList<T> : IReadOnlyList<T>
+public readonly struct DataList<T> : IReadOnlyList<T>
 {
-    private readonly IReadOnlyList<T> items;
+    private readonly IReadOnlyList<T>? items;
 
     public DataList(IReadOnlyList<T> items)
     {
         this.items = items;
     }
+
+    private IReadOnlyList<T> Items => items ?? Array.Empty<T>();
 
     public T? Value
     {
@@ -26,15 +28,15 @@ public class DataList<T> : IReadOnlyList<T>
         {
             if (Count > 1)
                 throw new InvalidOperationException("Access is only allowed for single or no items.");
-            return Count == 1 ? items[0] : default;
+            return Count == 1 ? Items[0] : default;
         }
     }
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    public IEnumerator<T> GetEnumerator() => items.GetEnumerator();
+    public IEnumerator<T> GetEnumerator() => Items.GetEnumerator();
 
-    public int Count => items.Count;
+    public int Count => Items.Count;
 
-    public T this[int index] => items[index];
+    public T this[int index] => Items[index];
 }
