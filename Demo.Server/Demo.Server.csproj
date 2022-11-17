@@ -11,4 +11,10 @@
     <ProjectReference Include="..\DarkLink.Web.WebFinger.Server\DarkLink.Web.WebFinger.Server.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="profile.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

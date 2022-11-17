@@ -2,8 +2,19 @@
 
 namespace DarkLink.Web.ActivityPub.Types.Extended;
 
+public record Actor(Uri Inbox, Uri Outbox) : Object
+{
+    public Uri? Followers { get; init; }
+
+    public Uri? Following { get; init; }
+
+    public Uri? Liked { get; init; }
+
+    public string? PreferredUsername { get; init; }
+}
+
 [LinkedData(Constants.NAMESPACE)]
-public record Person : Object;
+public record Person(Uri Inbox, Uri Outbox) : Actor(Inbox, Outbox);
 
 [LinkedData(Constants.NAMESPACE)]
 public record Document : Object;
