@@ -14,6 +14,8 @@ public abstract record Entity
     public Uri? Id { get; init; }
 
     public string? MediaType { get; init; }
+
+    public LinkOr<Object>? AttributedTo { get; init; }
 }
 
 [LinkedData(Constants.NAMESPACE)]
