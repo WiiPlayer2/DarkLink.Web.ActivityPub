@@ -15,7 +15,7 @@ public abstract record Entity
 
     public string? MediaType { get; init; }
 
-    public LinkOr<Object>? AttributedTo { get; init; }
+    public DataList<LinkOr<Object>> AttributedTo { get; init; }
 }
 
 [LinkedData(Constants.NAMESPACE)]
@@ -92,7 +92,7 @@ public record OrderedCollection : BaseCollection<OrderedCollectionPage>
 [LinkedData(Constants.NAMESPACE)]
 public record Activity : Object
 {
-    public DataList<LinkOr<Actor>> Actor { get; init; }
+    public DataList<LinkTo<Actor>> Actor { get; init; }
 
-    public DataList<LinkOr<Object>> Object { get; init; }
+    public DataList<LinkTo<Object>> Object { get; init; }
 }
