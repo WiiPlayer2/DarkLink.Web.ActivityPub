@@ -1,4 +1,5 @@
-﻿using DarkLink.Util.JsonLd.Attributes;
+﻿using DarkLink.Util.JsonLd;
+using DarkLink.Util.JsonLd.Attributes;
 using DarkLink.Util.JsonLd.Types;
 using DarkLink.Web.ActivityPub.Types.Extended;
 
@@ -9,13 +10,21 @@ public static class Constants
     public const string NAMESPACE = "https://www.w3.org/ns/activitystreams#";
 }
 
+internal class ActivityStreamsContextProxyResolver : IContextProxyResolver
+{
+    public IEnumerable<Type> ResolveProxyTypes(Type proxiedType) => typeof(Entity).Assembly.GetExportedTypes()
+        .Where(t => (t.Namespace?.StartsWith(typeof(Entity).Namespace!) ?? false)
+                    && !t.IsAbstract);
+}
+
+[ContextProxy(ProxyTypeResolver = typeof(ActivityStreamsContextProxyResolver))]
 public abstract record Entity
 {
-    public Uri? Id { get; init; }
+    public DataList<LinkOr<Object>> AttributedTo { get; init; }
+
+    [LinkedData("@id")] public Uri? Id { get; init; }
 
     public string? MediaType { get; init; }
-
-    public DataList<LinkOr<Object>> AttributedTo { get; init; }
 }
 
 [LinkedData(Constants.NAMESPACE)]

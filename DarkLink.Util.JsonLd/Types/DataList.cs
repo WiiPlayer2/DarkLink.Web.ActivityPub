@@ -1,16 +1,18 @@
 ﻿using System.Collections;
+using DarkLink.Util.JsonLd.Attributes;
 
 namespace DarkLink.Util.JsonLd.Types;
 
 public static class DataList
 {
     public static DataList<T> From<T>(T? value)
-        => new(value == null ? Array.Empty<T>() : new[] {value,});
+        => new(value == null ? Array.Empty<T>() : new[] {value});
 
     public static DataList<T> FromItems<T>(IEnumerable<T> values)
         => new(values.ToList());
 }
 
+[ContextProxy(ProxyTypeResolver = typeof(DataListContextProxyResolver), IgnoreProperties = true)]
 public readonly struct DataList<T> : IReadOnlyList<T>
 {
     private readonly IReadOnlyList<T>? items;
@@ -39,4 +41,9 @@ public readonly struct DataList<T> : IReadOnlyList<T>
     public int Count => Items.Count;
 
     public T this[int index] => Items[index];
+}
+
+internal class DataListContextProxyResolver : IContextProxyResolver
+{
+    public IEnumerable<Type> ResolveProxyTypes(Type proxiedType) => new[] {proxiedType.GenericTypeArguments[0]};
 }

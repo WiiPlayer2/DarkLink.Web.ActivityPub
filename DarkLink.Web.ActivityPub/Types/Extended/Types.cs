@@ -2,7 +2,7 @@
 
 namespace DarkLink.Web.ActivityPub.Types.Extended;
 
-public record Actor(Uri Inbox, Uri Outbox) : Object
+public abstract record Actor(Uri Inbox, Uri Outbox) : Object
 {
     public Uri? Followers { get; init; }
 
@@ -23,7 +23,9 @@ public record Document : Object;
 public record Image : Document;
 
 [LinkedData(Constants.NAMESPACE)]
-public record TypedActivity(Uri Type) : Activity;
+public record TypedActivity(
+    [property: LinkedData("@type")] Uri Type) : Activity;
 
 [LinkedData(Constants.NAMESPACE)]
-public record TypedObject(Uri Type) : Object;
+public record TypedObject(
+    [property: LinkedData("@type")] Uri Type) : Object;

@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Net;
-using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using DarkLink.Util.JsonLd;
@@ -20,12 +19,12 @@ var app = builder.Build();
 app.UseWebFinger();
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
 
-var jsonOptions = new JsonSerializerOptions()
+var jsonOptions = new JsonSerializerOptions
 {
     Converters =
-        {
-            LinkToConverter.Instance,
-        },
+    {
+        LinkToConverter.Instance,
+    },
 };
 
 app.MapGet("/profiles/{username}", (string username) => $"Welcome to the profile of [{username}].");
@@ -37,7 +36,7 @@ app.MapGet("/profiles/{username}.json", async ctx =>
     if (!ctx.Request.RouteValues.TryGetValue("username", out var usernameRaw)
         || usernameRaw is not string username)
     {
-        ctx.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+        ctx.Response.StatusCode = (int) HttpStatusCode.BadRequest;
         return;
     }
 
@@ -73,7 +72,7 @@ app.MapGet("/profiles/{username}.json", async ctx =>
 ""outbox"":""as:outbox""
 }
 ]");
-    var node = new JsonLdSerializer().Serialize(person, context, jsonOptions);
+    var node = new JsonLdSerializer().Serialize(person, jsonOptions);
 
     await ctx.Response.WriteAsync(node?.ToString() ?? string.Empty, ctx.RequestAborted);
 });
@@ -109,7 +108,7 @@ app.MapGet("/profiles/{username}/outbox", async ctx =>
 ]
 ");
 
-    var node = new JsonLdSerializer().Serialize(outboxCollection, context, jsonOptions);
+    var node = new JsonLdSerializer().Serialize(outboxCollection, jsonOptions);
 
     ctx.Response.Headers.ContentType = "application/activity+json; charset=utf-8";
     await ctx.Response.WriteAsync(node?.ToString() ?? string.Empty, ctx.RequestAborted);
@@ -117,7 +116,7 @@ app.MapGet("/profiles/{username}/outbox", async ctx =>
 
 app.MapMethods(
     "/{*path}",
-    new[] {HttpMethods.Get, HttpMethods.Post,},
+    new[] {HttpMethods.Get, HttpMethods.Post},
     async ctx =>
     {
         var headers = string.Join('\n', ctx.Request.Headers.Select(h => $"{h.Key}: {h.Value}"));
@@ -137,13 +136,13 @@ bool CheckRequest(HttpContext ctx, [NotNullWhen(true)] out string? username)
     if (!ctx.Request.RouteValues.TryGetValue("username", out var usernameRaw)
         || usernameRaw is not string usernameLocal)
     {
-        ctx.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+        ctx.Response.StatusCode = (int) HttpStatusCode.BadRequest;
         return false;
     }
 
     if (!Directory.Exists($"./data/{usernameLocal}"))
     {
-        ctx.Response.StatusCode = (int)HttpStatusCode.NotFound;
+        ctx.Response.StatusCode = (int) HttpStatusCode.NotFound;
         return false;
     }
 
@@ -154,10 +153,10 @@ bool CheckRequest(HttpContext ctx, [NotNullWhen(true)] out string? username)
 async Task<TypedObject> GetNoteAsync(string username, string filename, CancellationToken cancellationToken = default)
 {
     var fileInfo = new FileInfo($"./data/{username}/{filename}");
-    return new TypedObject(new(Constants.NAMESPACE + "Note"))
+    return new TypedObject(new Uri(Constants.NAMESPACE + "Note"))
     {
         Id = new Uri($"https://devtunnel.dark-link.info/notes/{username}/{fileInfo.Name}"),
-        AttributedTo = DataList.From<LinkOr<Object>>(new Link<Object>(new($"https://devtunnel.dark-link.info/notes/{username}.json"))),
+        AttributedTo = DataList.From<LinkOr<Object>>(new Link<Object>(new Uri($"https://devtunnel.dark-link.info/notes/{username}.json"))),
         Published = fileInfo.CreationTime,
         To = DataList.From<LinkOr<Object>>(new Link<Object>(new Uri("https://www.w3.org/ns/activitystreams#Public"))),
         Content = await File.ReadAllTextAsync(fileInfo.FullName, cancellationToken),
@@ -169,7 +168,7 @@ async Task<TypedActivity> GetNoteActivityAsync(string username, string filename,
     var note = await GetNoteAsync(username, filename, cancellationToken);
     return new TypedActivity(new Uri(Constants.NAMESPACE + "Create"))
     {
-        Id = new($"{note.Id}/activity"),
+        Id = new Uri($"{note.Id}/activity"),
         Published = note.Published,
         To = note.To,
         Actor = DataList.From<LinkTo<Actor>>(new Uri($"https://devtunnel.dark-link.info/profiles/{username}")),

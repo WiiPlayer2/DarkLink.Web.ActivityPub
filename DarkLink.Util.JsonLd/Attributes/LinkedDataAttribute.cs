@@ -13,3 +13,18 @@ public sealed class LinkedDataAttribute : Attribute
 
     public string? Type { get; set; }
 }
+
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct)]
+public sealed class ContextProxyAttribute : Attribute
+{
+    public ContextProxyAttribute(params Type[] proxyTypes)
+    {
+        ProxyTypes = proxyTypes;
+    }
+
+    public bool IgnoreProperties { get; set; }
+
+    public Type? ProxyTypeResolver { get; set; }
+
+    public Type[] ProxyTypes { get; set; }
+}
