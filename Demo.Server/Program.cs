@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using DarkLink.Util.JsonLd;
 using DarkLink.Util.JsonLd.Types;
 using DarkLink.Web.ActivityPub.Serialization;
@@ -78,15 +77,6 @@ app.MapGet("/profiles/{username}.json", async ctx =>
         })),
     };
 
-    //var context = new JsonArray(JsonValue.Create("https://www.w3.org/ns/activitystreams"));
-    var context = JsonNode.Parse(@"[
-""https://www.w3.org/ns/activitystreams"",
-{
-""url"":""as:url"",
-""inbox"":""as:inbox"",
-""outbox"":""as:outbox""
-}
-]");
     var node = new JsonLdSerializer().Serialize(person, commonContext, jsonOptions);
 
     await ctx.Response.WriteAsync(node?.ToString() ?? string.Empty, ctx.RequestAborted);
@@ -107,21 +97,6 @@ app.MapGet("/profiles/{username}/outbox", async ctx =>
         TotalItems = activities.Length,
         OrderedItems = DataList.FromItems<LinkOr<Object>>(activities.Select(a => new Object<Object>(a))),
     };
-
-    var context = JsonNode.Parse(@"
-[
-    """ + Constants.NAMESPACE + @""",
-    {
-        ""orderedItems"": ""as:orderedItems"",
-        ""published"": ""as:published"",
-        ""startIndex"": ""as:startIndex"",
-        ""totalItems"": ""to:talItems"",
-        ""actor"": ""as:actor"",
-        ""to"": ""as:to"",
-        ""attributedTo"": ""as:attributedTo""
-    }
-]
-");
 
     var node = new JsonLdSerializer().Serialize(outboxCollection, commonContext, jsonOptions);
 
