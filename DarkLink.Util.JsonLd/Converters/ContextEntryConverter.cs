@@ -40,7 +40,11 @@ internal class TermMappingConverter : JsonConverter<TermMapping>
         if (dto is null)
             return null;
 
-        return new TermMapping(dto.Id, dto.Type);
+        return new TermMapping(dto.Id)
+        {
+            Type = dto.Type,
+            Container = dto.Container,
+        };
     }
 
     public override void Write(Utf8JsonWriter writer, TermMapping value, JsonSerializerOptions options)
@@ -51,10 +55,10 @@ internal class TermMappingConverter : JsonConverter<TermMapping>
             return;
         }
 
-        var dto = new Dto(value.Id, value.Type);
+        var dto = new Dto(value.Id, value.Type, value.Container);
         JsonSerializer.Serialize(writer, dto, options);
     }
 
     [LinkedData(IsTypeless = true)]
-    private record Dto(Uri Id, Uri? Type);
+    private record Dto(Uri Id, Uri? Type, string? Container);
 }

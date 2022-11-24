@@ -59,6 +59,9 @@ internal class LinkedDataConverter : JsonConverterFactory
                 if (propertyInfo.Name.Equals("type", StringComparison.InvariantCultureIgnoreCase))
                     return "@type";
 
+                if (propertyInfo.Name.Equals("container", StringComparison.InvariantCultureIgnoreCase))
+                    return "@container";
+
                 var name = $"{metadata.Path}{propertyInfo.Name.Uncapitalize()}";
                 return name;
             }

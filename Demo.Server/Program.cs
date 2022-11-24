@@ -104,6 +104,32 @@ app.MapGet("/profiles/{username}/outbox", async ctx =>
     await ctx.Response.WriteAsync(node?.ToString() ?? string.Empty, ctx.RequestAborted);
 });
 
+app.MapGet("/notes/{username}/{note}", async ctx =>
+{
+    if (!CheckRequest(ctx, out var username)
+        || !ctx.Request.RouteValues.TryGetValue("note", out var noteFileRaw)
+        || noteFileRaw is not string noteFile) return;
+
+    var note = await GetNoteAsync(username, noteFile, ctx.RequestAborted);
+    var node = new JsonLdSerializer().Serialize(note, commonContext, jsonOptions);
+
+    ctx.Response.Headers.ContentType = "application/activity+json; charset=utf-8";
+    await ctx.Response.WriteAsync(node?.ToString() ?? string.Empty, ctx.RequestAborted);
+});
+
+app.MapGet("/notes/{username}/{note}/activity", async ctx =>
+{
+    if (!CheckRequest(ctx, out var username)
+        || !ctx.Request.RouteValues.TryGetValue("note", out var noteFileRaw)
+        || noteFileRaw is not string noteFile) return;
+
+    var activity = await GetNoteActivityAsync(username, noteFile, ctx.RequestAborted);
+    var node = new JsonLdSerializer().Serialize(activity, commonContext, jsonOptions);
+
+    ctx.Response.Headers.ContentType = "application/activity+json; charset=utf-8";
+    await ctx.Response.WriteAsync(node?.ToString() ?? string.Empty, ctx.RequestAborted);
+});
+
 app.MapMethods(
     "/{*path}",
     new[] {HttpMethods.Get, HttpMethods.Post},
@@ -146,9 +172,9 @@ async Task<Note> GetNoteAsync(string username, string filename, CancellationToke
     return new Note
     {
         Id = new Uri($"https://devtunnel.dark-link.info/notes/{username}/{fileInfo.Name}"),
-        AttributedTo = DataList.From<LinkOr<Object>>(new Link<Object>(new Uri($"https://devtunnel.dark-link.info/notes/{username}.json"))),
-        Published = fileInfo.CreationTime,
         To = DataList.From<LinkOr<Object>>(new Link<Object>(new Uri("https://www.w3.org/ns/activitystreams#Public"))),
+        AttributedTo = DataList.From<LinkOr<Object>>(new Link<Object>(new Uri($"https://devtunnel.dark-link.info/profiles/{username}.json"))),
+        //Published = fileInfo.CreationTime,
         Content = await File.ReadAllTextAsync(fileInfo.FullName, cancellationToken),
     };
 }
@@ -159,9 +185,9 @@ async Task<Create> GetNoteActivityAsync(string username, string filename, Cancel
     return new Create
     {
         Id = new Uri($"{note.Id}/activity"),
-        Published = note.Published,
+        //Published = note.Published,
         To = note.To,
-        Actor = DataList.From<LinkTo<Actor>>(new Uri($"https://devtunnel.dark-link.info/profiles/{username}")),
+        Actor = DataList.From<LinkTo<Actor>>(new Uri($"https://devtunnel.dark-link.info/profiles/{username}.json")),
         Object = DataList.From<LinkTo<Object>>(note),
     };
 }
