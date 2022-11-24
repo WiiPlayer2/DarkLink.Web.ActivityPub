@@ -150,10 +150,10 @@ bool CheckRequest(HttpContext ctx, [NotNullWhen(true)] out string? username)
     return true;
 }
 
-async Task<TypedObject> GetNoteAsync(string username, string filename, CancellationToken cancellationToken = default)
+async Task<Note> GetNoteAsync(string username, string filename, CancellationToken cancellationToken = default)
 {
     var fileInfo = new FileInfo($"./data/{username}/{filename}");
-    return new TypedObject(new Uri(Constants.NAMESPACE + "Note"))
+    return new Note
     {
         Id = new Uri($"https://devtunnel.dark-link.info/notes/{username}/{fileInfo.Name}"),
         AttributedTo = DataList.From<LinkOr<Object>>(new Link<Object>(new Uri($"https://devtunnel.dark-link.info/notes/{username}.json"))),
@@ -163,10 +163,10 @@ async Task<TypedObject> GetNoteAsync(string username, string filename, Cancellat
     };
 }
 
-async Task<TypedActivity> GetNoteActivityAsync(string username, string filename, CancellationToken cancellationToken = default)
+async Task<Create> GetNoteActivityAsync(string username, string filename, CancellationToken cancellationToken = default)
 {
     var note = await GetNoteAsync(username, filename, cancellationToken);
-    return new TypedActivity(new Uri(Constants.NAMESPACE + "Create"))
+    return new Create
     {
         Id = new Uri($"{note.Id}/activity"),
         Published = note.Published,

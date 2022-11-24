@@ -29,3 +29,9 @@ public record TypedActivity(
 [LinkedData(Constants.NAMESPACE)]
 public record TypedObject(
     [property: LinkedData("@type")] Uri Type) : Object;
+
+[LinkedData(Constants.NAMESPACE)]
+public record Create : Activity;
+
+[LinkedData(Constants.NAMESPACE)]
+public record Note : Object;
