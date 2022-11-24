@@ -1,4 +1,5 @@
-﻿using DarkLink.Util.JsonLd;
+﻿using System.Text.Json.Serialization;
+using DarkLink.Util.JsonLd;
 using DarkLink.Util.JsonLd.Attributes;
 using DarkLink.Util.JsonLd.Types;
 using DarkLink.Web.ActivityPub.Types.Extended;
@@ -87,6 +88,7 @@ public record Collection : BaseCollection<CollectionPage>
 [LinkedData(Constants.NAMESPACE)]
 public record OrderedCollectionPage : BaseCollectionPage<OrderedCollectionPage>
 {
+    [JsonPropertyName($"{Constants.NAMESPACE}items")]
     public DataList<LinkOr<Object>> OrderedItems { get; init; }
 
     public int StartIndex { get; init; }
@@ -95,6 +97,7 @@ public record OrderedCollectionPage : BaseCollectionPage<OrderedCollectionPage>
 [LinkedData(Constants.NAMESPACE)]
 public record OrderedCollection : BaseCollection<OrderedCollectionPage>
 {
+    [JsonPropertyName($"{Constants.NAMESPACE}items")]
     public DataList<LinkOr<Object>> OrderedItems { get; init; }
 }
 

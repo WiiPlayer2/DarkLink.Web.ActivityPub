@@ -18,6 +18,21 @@ builder.Services.AddWebFinger<ResourceDescriptorProvider>();
 var app = builder.Build();
 app.UseWebFinger();
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
+var commonContext = DataList.FromItems(new LinkOr<ContextEntry>[]
+{
+    new Uri("https://www.w3.org/ns/activitystreams"),
+    new ContextEntry
+    {
+        {new("inbox", UriKind.RelativeOrAbsolute), new Uri("ldp:inbox", UriKind.RelativeOrAbsolute)},
+        {new("outbox", UriKind.RelativeOrAbsolute), new Uri("as:outbox", UriKind.RelativeOrAbsolute)},
+        {new("url", UriKind.RelativeOrAbsolute), new Uri("as:url", UriKind.RelativeOrAbsolute)},
+        {new("actor", UriKind.RelativeOrAbsolute), new Uri("as:actor", UriKind.RelativeOrAbsolute)},
+        {new("published", UriKind.RelativeOrAbsolute), new Uri("as:published", UriKind.RelativeOrAbsolute)},
+        {new("to", UriKind.RelativeOrAbsolute), new Uri("as:to", UriKind.RelativeOrAbsolute)},
+        {new("attributedTo", UriKind.RelativeOrAbsolute), new Uri("as:attributedTo", UriKind.RelativeOrAbsolute)},
+        {new("totalItems", UriKind.RelativeOrAbsolute), new Uri("as:totalItems", UriKind.RelativeOrAbsolute)},
+    }!,
+});
 
 var jsonOptions = new JsonSerializerOptions
 {
@@ -72,7 +87,7 @@ app.MapGet("/profiles/{username}.json", async ctx =>
 ""outbox"":""as:outbox""
 }
 ]");
-    var node = new JsonLdSerializer().Serialize(person, jsonOptions);
+    var node = new JsonLdSerializer().Serialize(person, commonContext, jsonOptions);
 
     await ctx.Response.WriteAsync(node?.ToString() ?? string.Empty, ctx.RequestAborted);
 });
@@ -108,7 +123,7 @@ app.MapGet("/profiles/{username}/outbox", async ctx =>
 ]
 ");
 
-    var node = new JsonLdSerializer().Serialize(outboxCollection, jsonOptions);
+    var node = new JsonLdSerializer().Serialize(outboxCollection, commonContext, jsonOptions);
 
     ctx.Response.Headers.ContentType = "application/activity+json; charset=utf-8";
     await ctx.Response.WriteAsync(node?.ToString() ?? string.Empty, ctx.RequestAborted);

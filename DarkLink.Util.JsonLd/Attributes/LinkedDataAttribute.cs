@@ -9,6 +9,8 @@ public sealed class LinkedDataAttribute : Attribute
         Type = type;
     }
 
+    public bool IsTypeless { get; set; }
+
     public string? Path { get; set; }
 
     public string? Type { get; set; }

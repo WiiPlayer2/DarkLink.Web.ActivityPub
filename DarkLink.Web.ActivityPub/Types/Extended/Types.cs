@@ -1,8 +1,12 @@
-﻿using DarkLink.Util.JsonLd.Attributes;
+﻿using System.Text.Json.Serialization;
+using DarkLink.Util.JsonLd.Attributes;
 
 namespace DarkLink.Web.ActivityPub.Types.Extended;
 
-public abstract record Actor(Uri Inbox, Uri Outbox) : Object
+public abstract record Actor(
+    [property: JsonPropertyName("http://www.w3.org/ns/ldp#inbox")]
+    Uri Inbox,
+    Uri Outbox) : Object
 {
     public Uri? Followers { get; init; }
 

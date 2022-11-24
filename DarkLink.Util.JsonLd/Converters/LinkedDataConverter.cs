@@ -30,7 +30,7 @@ internal class LinkedDataConverter : JsonConverterFactory
                 .Where(o => o.Value is not null);
             var node = new JsonObject(values);
 
-            if (!node.ContainsKey("@type"))
+            if (!node.ContainsKey("@type") && !metadata.IsTypeless)
             {
                 var typeName = metadata.Type ?? valueType.Name;
                 var fullType = $"{metadata.Path}{typeName}";
