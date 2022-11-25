@@ -9,6 +9,22 @@ namespace DarkLink.Web.ActivityPub.Types;
 public static class Constants
 {
     public const string NAMESPACE = "https://www.w3.org/ns/activitystreams#";
+
+    public static readonly LinkedDataList<ContextEntry> Context = DataList.FromItems(new LinkOr<ContextEntry>[]
+    {
+        new Uri("https://www.w3.org/ns/activitystreams"),
+        new ContextEntry
+        {
+            {new("inbox", UriKind.RelativeOrAbsolute), new Uri("ldp:inbox", UriKind.RelativeOrAbsolute)},
+            {new("outbox", UriKind.RelativeOrAbsolute), new Uri("as:outbox", UriKind.RelativeOrAbsolute)},
+            {new("url", UriKind.RelativeOrAbsolute), new Uri("as:url", UriKind.RelativeOrAbsolute)},
+            {new("actor", UriKind.RelativeOrAbsolute), new Uri("as:actor", UriKind.RelativeOrAbsolute)},
+            {new("published", UriKind.RelativeOrAbsolute), new Uri("as:published", UriKind.RelativeOrAbsolute)},
+            {new("to", UriKind.RelativeOrAbsolute), new Uri("as:to", UriKind.RelativeOrAbsolute)},
+            {new("attributedTo", UriKind.RelativeOrAbsolute), new Uri("as:attributedTo", UriKind.RelativeOrAbsolute)},
+            {new("totalItems", UriKind.RelativeOrAbsolute), new Uri("as:totalItems", UriKind.RelativeOrAbsolute)},
+        }!,
+    });
 }
 
 internal class ActivityStreamsContextProxyResolver : IContextProxyResolver

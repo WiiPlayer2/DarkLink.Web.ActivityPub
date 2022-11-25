@@ -8,13 +8,13 @@ namespace DarkLink.Util.JsonLd;
 
 public static class LinkedDataSerializer
 {
-    public static T? Deserialize<T>(JsonNode node, JsonSerializerOptions? options = default)
+    public static T? Deserialize<T>(JsonNode node, LinkedDataList<ContextEntry> context = default, JsonSerializerOptions? options = default)
     {
         options = Prepare<T>(options);
 
         var expanded = node.Expand();
-        var context = new JsonObject();
-        var compacted = expanded.Compact(context);
+        var contextNode = JsonSerializer.SerializeToNode(context, options) ?? new JsonObject();
+        var compacted = expanded.Compact(contextNode);
         return compacted.Deserialize<T>(options);
     }
 

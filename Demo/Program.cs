@@ -1,9 +1,8 @@
 ﻿using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
 using DarkLink.Text.Json.NewtonsoftJsonMapper;
 using DarkLink.Util.JsonLd;
-using DarkLink.Util.JsonLd.Attributes;
-using DarkLink.Util.JsonLd.Types;
+using DarkLink.Web.ActivityPub.Types;
+using DarkLink.Web.ActivityPub.Types.Extended;
 using JsonLD.Core;
 using Newtonsoft.Json.Linq;
 
@@ -31,27 +30,10 @@ Console.WriteLine(LINE);
 Console.WriteLine(recompacted);
 Console.WriteLine(LINE);
 
-var poco = LinkedDataSerializer.Deserialize<Person>(compact);
-var node = LinkedDataSerializer.Serialize(poco);
+var poco = LinkedDataSerializer.Deserialize<Person>(compact, Constants.Context);
+var node = LinkedDataSerializer.Serialize(poco, Constants.Context);
 
 Console.WriteLine(node);
 Console.WriteLine(LINE);
 
 Console.WriteLine("done.");
-
-[LinkedData("https://www.w3.org/ns/activitystreams#")]
-public record OrderedCollection(
-    Uri Id,
-    Typed<int> TotalItems,
-    LinkOr<object> First);
-
-[LinkedData("https://www.w3.org/ns/activitystreams#")]
-public record Person(
-    Uri Id,
-    IReadOnlyList<Uri> Type,
-    string Summary,
-    [property: JsonPropertyName("http://joinmastodon.org/ns#featured")]
-    IReadOnlyList<object> Featured);
-
-[LinkedData]
-public record Typed<T>(Uri Type, T Value);
