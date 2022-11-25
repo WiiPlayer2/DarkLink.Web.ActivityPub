@@ -47,6 +47,8 @@ app.MapGet("/profile.png", async ctx => { await ctx.Response.SendFileAsync("./pr
 
 app.MapGet("/profiles/{username}.json", async ctx =>
 {
+    await DumpRequestAsync("Profile", ctx.Request);
+
     if (!ctx.Request.RouteValues.TryGetValue("username", out var usernameRaw)
         || usernameRaw is not string username)
     {
@@ -84,6 +86,8 @@ app.MapGet("/profiles/{username}.json", async ctx =>
 
 app.MapGet("/profiles/{username}/outbox", async ctx =>
 {
+    await DumpRequestAsync("Outbox", ctx.Request);
+
     if (!CheckRequest(ctx, out var username)) return;
 
     var activities = await new DirectoryInfo($"./data/{username}")
@@ -106,6 +110,8 @@ app.MapGet("/profiles/{username}/outbox", async ctx =>
 
 app.MapGet("/notes/{username}/{note}", async ctx =>
 {
+    await DumpRequestAsync("Note", ctx.Request);
+
     if (!CheckRequest(ctx, out var username)
         || !ctx.Request.RouteValues.TryGetValue("note", out var noteFileRaw)
         || noteFileRaw is not string noteFile) return;
@@ -119,6 +125,8 @@ app.MapGet("/notes/{username}/{note}", async ctx =>
 
 app.MapGet("/notes/{username}/{note}/activity", async ctx =>
 {
+    await DumpRequestAsync("Activity", ctx.Request);
+
     if (!CheckRequest(ctx, out var username)
         || !ctx.Request.RouteValues.TryGetValue("note", out var noteFileRaw)
         || noteFileRaw is not string noteFile) return;
@@ -135,16 +143,21 @@ app.MapMethods(
     new[] {HttpMethods.Get, HttpMethods.Post},
     async ctx =>
     {
-        var headers = string.Join('\n', ctx.Request.Headers.Select(h => $"{h.Key}: {h.Value}"));
-        var query = string.Join('\n', ctx.Request.Query.Select(q => $"{q.Key}={q.Value}"));
-        using var reader = new StreamReader(ctx.Request.Body);
-        var body = await reader.ReadToEndAsync();
-        logger.LogDebug($"{ctx.Request.Method} {ctx.Request.GetDisplayUrl()}\n{query}\n{headers}\n{body}");
+        await DumpRequestAsync("<none>", ctx.Request);
         ctx.Response.StatusCode = (int) HttpStatusCode.InternalServerError;
         await ctx.Response.CompleteAsync();
     });
 
 app.Run();
+
+async Task DumpRequestAsync(string topic, HttpRequest request)
+{
+    var headers = string.Join('\n', request.Headers.Select(h => $"{h.Key}: {h.Value}"));
+    var query = string.Join('\n', request.Query.Select(q => $"{q.Key}={q.Value}"));
+    using var reader = new StreamReader(request.Body);
+    var body = await reader.ReadToEndAsync();
+    logger.LogDebug($"{topic}\n{request.Method} {request.GetDisplayUrl()}\n{query}\n{headers}\n{body}");
+}
 
 bool CheckRequest(HttpContext ctx, [NotNullWhen(true)] out string? username)
 {
