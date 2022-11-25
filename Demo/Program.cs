@@ -31,9 +31,8 @@ Console.WriteLine(LINE);
 Console.WriteLine(recompacted);
 Console.WriteLine(LINE);
 
-var serializer = new JsonLdSerializer();
-var poco = serializer.Deserialize<Person>(compact);
-var node = serializer.Serialize(poco);
+var poco = LinkedDataSerializer.Deserialize<Person>(compact);
+var node = LinkedDataSerializer.Serialize(poco);
 
 Console.WriteLine(node);
 Console.WriteLine(LINE);

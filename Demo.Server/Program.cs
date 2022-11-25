@@ -79,7 +79,7 @@ app.MapGet("/profiles/{username}.json", async ctx =>
         })),
     };
 
-    var node = new JsonLdSerializer().Serialize(person, commonContext, jsonOptions);
+    var node = LinkedDataSerializer.Serialize(person, commonContext, jsonOptions);
 
     await ctx.Response.WriteAsync(node?.ToString() ?? string.Empty, ctx.RequestAborted);
 });
@@ -102,7 +102,7 @@ app.MapGet("/profiles/{username}/outbox", async ctx =>
         OrderedItems = DataList.FromItems<LinkOr<Object>>(activities.Select(a => new Object<Object>(a))),
     };
 
-    var node = new JsonLdSerializer().Serialize(outboxCollection, commonContext, jsonOptions);
+    var node = LinkedDataSerializer.Serialize(outboxCollection, commonContext, jsonOptions);
 
     ctx.Response.Headers.ContentType = "application/activity+json; charset=utf-8";
     await ctx.Response.WriteAsync(node?.ToString() ?? string.Empty, ctx.RequestAborted);
@@ -117,7 +117,7 @@ app.MapGet("/notes/{username}/{note}", async ctx =>
         || noteFileRaw is not string noteFile) return;
 
     var note = await GetNoteAsync(username, noteFile, ctx.RequestAborted);
-    var node = new JsonLdSerializer().Serialize(note, commonContext, jsonOptions);
+    var node = LinkedDataSerializer.Serialize(note, commonContext, jsonOptions);
 
     ctx.Response.Headers.ContentType = "application/activity+json; charset=utf-8";
     await ctx.Response.WriteAsync(node?.ToString() ?? string.Empty, ctx.RequestAborted);
@@ -132,7 +132,7 @@ app.MapGet("/notes/{username}/{note}/activity", async ctx =>
         || noteFileRaw is not string noteFile) return;
 
     var activity = await GetNoteActivityAsync(username, noteFile, ctx.RequestAborted);
-    var node = new JsonLdSerializer().Serialize(activity, commonContext, jsonOptions);
+    var node = LinkedDataSerializer.Serialize(activity, commonContext, jsonOptions);
 
     ctx.Response.Headers.ContentType = "application/activity+json; charset=utf-8";
     await ctx.Response.WriteAsync(node?.ToString() ?? string.Empty, ctx.RequestAborted);

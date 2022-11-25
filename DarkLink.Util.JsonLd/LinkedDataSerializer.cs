@@ -6,9 +6,9 @@ using DarkLink.Util.JsonLd.Types;
 
 namespace DarkLink.Util.JsonLd;
 
-public class JsonLdSerializer
+public static class LinkedDataSerializer
 {
-    public T? Deserialize<T>(JsonNode node, JsonSerializerOptions? options = default)
+    public static T? Deserialize<T>(JsonNode node, JsonSerializerOptions? options = default)
     {
         options = Prepare<T>(options);
 
@@ -33,7 +33,7 @@ public class JsonLdSerializer
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
         };
 
-    public JsonNode? Serialize<T>(T obj, LinkedDataList<ContextEntry> context, JsonSerializerOptions? options = default)
+    public static JsonNode? Serialize<T>(T obj, LinkedDataList<ContextEntry> context = default, JsonSerializerOptions? options = default)
     {
         options = Prepare<T>(options);
 
