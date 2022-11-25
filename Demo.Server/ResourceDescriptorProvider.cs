@@ -4,17 +4,15 @@ using DarkLink.Web.WebFinger.Shared;
 
 internal class ResourceDescriptorProvider : IResourceDescriptorProvider
 {
-    public const string USER = "dev2";
-
     public async Task<JsonResourceDescriptor?> GetResourceDescriptorAsync(Uri resource, IReadOnlyList<string> relations, HttpRequest request, CancellationToken cancellationToken)
     {
         if (resource.Scheme is not "acct")
             return default;
-        
-        if (!resource.LocalPath.EndsWith("@devtunnel.dark-link.info"))
+
+        if (!resource.LocalPath.EndsWith($"@{request.Host}"))
             return default;
 
-        var username = resource.LocalPath[..^25];
+        var username = resource.LocalPath[..^request.Host.ToString().Length];
 
         if (!Directory.Exists("./data"))
             Directory.CreateDirectory("./data");
@@ -32,12 +30,12 @@ internal class ResourceDescriptorProvider : IResourceDescriptorProvider
                 Link.Create(Constants.RELATION_PROFILE_PAGE) with
                 {
                     Type = "text/html",
-                    Href = new Uri($"https://devtunnel.dark-link.info/profiles/{username}"),
+                    Href = new Uri($"{request.Scheme}://{request.Host}/profiles/{username}"),
                 },
                 Link.Create("self") with
                 {
                     Type = "application/activity+json",
-                    Href = new Uri($"https://devtunnel.dark-link.info/profiles/{username}.json"),
+                    Href = new Uri($"{request.Scheme}://{request.Host}/profiles/{username}.json"),
                 }),
         };
         return descriptor;
