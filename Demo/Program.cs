@@ -57,6 +57,7 @@ var myPerson = LinkedDataSerializer.Deserialize2<MyPerson>(ld);
 
 Console.WriteLine("done.");
 
+[LinkedDataType("https://www.w3.org/ns/activitystreams#Person")]
 internal record MyPerson
 {
     [LinkedDataProperty("https://www.w3.org/ns/activitystreams#icon")]
@@ -76,6 +77,7 @@ internal record MyPerson
     public DataList<Uri> Type { get; init; }
 }
 
+[LinkedDataType("https://www.w3.org/ns/activitystreams#Person")]
 internal record MyImage
 {
     [LinkedDataProperty("https://www.w3.org/ns/activitystreams#mediaType")]
