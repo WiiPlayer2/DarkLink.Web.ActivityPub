@@ -44,6 +44,8 @@ public readonly struct DataList<T> : IReadOnlyList<T>
     public int Count => Items.Count;
 
     public T this[int index] => Items[index];
+
+    public static implicit operator DataList<T>(T? value) => DataList.From(value);
 }
 
 internal class DataListContextProxyResolver : IContextProxyResolver

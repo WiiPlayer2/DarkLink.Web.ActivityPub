@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using DarkLink.Util.JsonLd.Converters;
 using DarkLink.Util.JsonLd.Converters.Json;
 using DarkLink.Util.JsonLd.Types;
 
@@ -86,6 +87,21 @@ public class LinkedDataConverter2 : JsonConverter<LinkedData>
     }
 }
 
+public class LinkedDataSerializationOptions
+{
+    public LinkedDataSerializationOptions()
+    {
+        Converters = new List<ILinkedDataConverter>();
+    }
+
+    public LinkedDataSerializationOptions(LinkedDataSerializationOptions copyFrom)
+    {
+        Converters = new List<ILinkedDataConverter>(copyFrom.Converters);
+    }
+
+    public List<ILinkedDataConverter> Converters { get; }
+}
+
 public static class LinkedDataSerializer
 {
     public static T? Deserialize<T>(JsonNode node, LinkedDataList<ContextEntry> context = default, JsonSerializerOptions? options = default)
@@ -97,6 +113,18 @@ public static class LinkedDataSerializer
         var compacted = expanded.Compact(contextNode);
         return compacted.Deserialize<T>(options);
     }
+
+    public static object? Deserialize2(DataList<LinkedData> data, Type targetType, LinkedDataSerializationOptions? options = default)
+    {
+        options ??= new LinkedDataSerializationOptions();
+
+        var converter = options.Converters.FirstOrDefault(c => c.CanConvert(targetType)) ?? throw new InvalidOperationException($"Unable to deserialize type {targetType.AssemblyQualifiedName}.");
+        var result = converter.Convert(data, targetType, options);
+        return result;
+    }
+
+    public static T? Deserialize2<T>(DataList<LinkedData> data, LinkedDataSerializationOptions? options = default)
+        => (T?) Deserialize2(data, typeof(T), options);
 
     public static LinkedData? DeserializeLinkedData(JsonNode node, JsonSerializerOptions? options = default)
     {
