@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using DarkLink.Util.JsonLd.Attributes;
 
-namespace DarkLink.Util.JsonLd.Converters;
+namespace DarkLink.Util.JsonLd.Converters.Json;
 
 internal class LinkedDataConverter : JsonConverterFactory
 {

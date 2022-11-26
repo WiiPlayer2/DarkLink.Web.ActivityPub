@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using DarkLink.Util.JsonLd.Converters;
+using DarkLink.Util.JsonLd.Converters.Json;
 using DarkLink.Util.JsonLd.Types;
 
 namespace DarkLink.Util.JsonLd;

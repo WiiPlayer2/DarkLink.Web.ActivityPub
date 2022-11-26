@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using DarkLink.Util.JsonLd.Types;
 
-namespace DarkLink.Util.JsonLd.Converters;
+namespace DarkLink.Util.JsonLd.Converters.Json;
 
 internal class DataListConverter : JsonConverterFactory
 {
