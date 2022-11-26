@@ -96,6 +96,7 @@ public class LinkedDataSerializationOptions
         Converters = new List<ILinkedDataConverter>
         {
             new ObjectConverter(),
+            new EnumerableConverter(),
             new StringConverter(),
             new UriConverter(),
         };

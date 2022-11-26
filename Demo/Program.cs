@@ -60,12 +60,12 @@ Console.WriteLine("done.");
 internal record MyPerson
 {
     [LinkedDataProperty("https://www.w3.org/ns/activitystreams#icon")]
-    public MyImage? Icon { get; init; }
+    public IReadOnlyList<MyImage>? Icon { get; init; }
 
     public Uri? Id { get; init; }
 
     [LinkedDataProperty("https://www.w3.org/ns/activitystreams#image")]
-    public MyImage? Image { get; init; }
+    public IReadOnlyList<MyImage>? Image { get; init; }
 
     [LinkedDataProperty("https://www.w3.org/ns/activitystreams#name")]
     public string? Name { get; init; }
