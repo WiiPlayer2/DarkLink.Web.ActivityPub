@@ -1,4 +1,6 @@
 ﻿using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using DarkLink.Util.JsonLd.Attributes;
 
 namespace DarkLink.Util.JsonLd;
@@ -27,6 +29,16 @@ internal static class Helper
             foreach (var proxyType in resolver.ResolveProxyTypes(type))
                 yield return proxyType;
         }
+    }
+
+    public static bool TryDeserializeProperty<T>(this JsonObject jsonObject, string propertyName, out T? value, JsonSerializerOptions? options = default)
+    {
+        value = default;
+        if (!jsonObject.TryGetPropertyValue(propertyName, out var propertyNode))
+            return false;
+
+        value = propertyNode.Deserialize<T>(options);
+        return true;
     }
 
     public static string Uncapitalize(this string s)

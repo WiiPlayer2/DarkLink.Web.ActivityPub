@@ -45,4 +45,6 @@ var node = LinkedDataSerializer.Serialize(poco, Constants.Context, jsonOptions);
 Console.WriteLine(node);
 Console.WriteLine(LINE);
 
+var ld = LinkedDataSerializer.Deserialize2(compact, jsonOptions);
+
 Console.WriteLine("done.");

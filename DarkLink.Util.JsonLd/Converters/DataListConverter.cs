@@ -32,7 +32,12 @@ internal class DataListConverter : JsonConverterFactory
         {
             var list = new List<T>();
             reader.Read();
-            while (reader.TokenType != JsonTokenType.EndArray) throw new NotImplementedException();
+            while (reader.TokenType != JsonTokenType.EndArray)
+            {
+                var item = JsonSerializer.Deserialize<T>(ref reader, options)!; // null should not be in data list
+                list.Add(item);
+                reader.Read(); // TODO why? shouldn't deserialization read ahead?
+            }
 
             return DataList.FromItems(list);
         }
