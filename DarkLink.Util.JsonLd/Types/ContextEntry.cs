@@ -9,4 +9,7 @@ public record TermMapping(Uri Id)
     public static implicit operator TermMapping(Uri id) => new(id);
 }
 
-public class ContextEntry : Dictionary<Uri, TermMapping> { }
+public class ContextEntry : Dictionary<Uri, TermMapping>
+{
+    public void Add((Uri Id, TermMapping Mapping) value) => Add(value.Id, value.Mapping);
+}

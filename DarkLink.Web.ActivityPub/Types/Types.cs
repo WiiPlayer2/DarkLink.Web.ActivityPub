@@ -3,6 +3,7 @@ using DarkLink.Util.JsonLd;
 using DarkLink.Util.JsonLd.Attributes;
 using DarkLink.Util.JsonLd.Types;
 using DarkLink.Web.ActivityPub.Types.Extended;
+using LDConstants = DarkLink.Util.JsonLd.Constants;
 
 namespace DarkLink.Web.ActivityPub.Types;
 
@@ -15,16 +16,30 @@ public static class Constants
         new Uri("https://www.w3.org/ns/activitystreams"),
         new ContextEntry
         {
-            {new("inbox", UriKind.RelativeOrAbsolute), new Uri("ldp:inbox", UriKind.RelativeOrAbsolute)},
-            {new("outbox", UriKind.RelativeOrAbsolute), new Uri("as:outbox", UriKind.RelativeOrAbsolute)},
-            {new("url", UriKind.RelativeOrAbsolute), new Uri("as:url", UriKind.RelativeOrAbsolute)},
-            {new("actor", UriKind.RelativeOrAbsolute), new Uri("as:actor", UriKind.RelativeOrAbsolute)},
-            {new("published", UriKind.RelativeOrAbsolute), new Uri("as:published", UriKind.RelativeOrAbsolute)},
-            {new("to", UriKind.RelativeOrAbsolute), new Uri("as:to", UriKind.RelativeOrAbsolute)},
-            {new("attributedTo", UriKind.RelativeOrAbsolute), new Uri("as:attributedTo", UriKind.RelativeOrAbsolute)},
+            MapId("inbox", "ldp:inbox"),
+            MapId("outbox", "as:outbox"),
+            MapId("url", "as:url"),
+            MapId("actor", "as:actor"),
+            Map("published", "as:published", "xsd:dateTime"),
+            MapId("to", "as:to"),
+            MapId("attributedTo", "as:attributedTo"),
             {new("totalItems", UriKind.RelativeOrAbsolute), new Uri("as:totalItems", UriKind.RelativeOrAbsolute)},
         }!,
     });
+
+    private static (Uri Id, TermMapping Mapping) Map(string property, string iri, string type)
+        => (new Uri(property, UriKind.Relative),
+            new TermMapping(new Uri(iri, UriKind.RelativeOrAbsolute))
+            {
+                Type = new Uri(type, UriKind.RelativeOrAbsolute),
+            });
+
+    private static (Uri Id, TermMapping Mapping) MapId(string property, string iri)
+        => (new Uri(property, UriKind.Relative),
+            new TermMapping(new Uri(iri, UriKind.RelativeOrAbsolute))
+            {
+                Type = LDConstants.Id,
+            });
 }
 
 internal class ActivityStreamsContextProxyResolver : IContextProxyResolver
@@ -54,7 +69,7 @@ public record Object : Entity
 
     public string? Content { get; init; }
 
-    public DataList<LinkOr<Image>> Icon { get; init; }
+    public DataList<LinkTo<Image>> Icon { get; init; }
 
     public string? Name { get; init; }
 
@@ -64,7 +79,7 @@ public record Object : Entity
 
     public DataList<LinkOr<Object>> To { get; init; }
 
-    public DataList<LinkOr<Link>> Url { get; init; }
+    public DataList<LinkTo<Object>> Url { get; init; }
 }
 
 public abstract record BaseCollectionPage<TPage>

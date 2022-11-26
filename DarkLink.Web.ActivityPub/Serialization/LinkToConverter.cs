@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using DarkLink.Web.ActivityPub.Types;
 using Object = DarkLink.Web.ActivityPub.Types.Object;
@@ -24,7 +25,17 @@ public class LinkToConverter : JsonConverterFactory
     private class Conv<T> : JsonConverter<LinkTo<T>>
         where T : Object
     {
-        public override LinkTo<T>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => throw new NotImplementedException();
+        public override LinkTo<T>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            var node = JsonSerializer.Deserialize<JsonNode>(ref reader, options);
+            if (node is null)
+                return null;
+
+            if (node is JsonValue nodeValue && nodeValue.TryGetValue<string>(out var id))
+                return new Uri(id);
+
+            return node.Deserialize<T>(options)!;
+        }
 
         public override void Write(Utf8JsonWriter writer, LinkTo<T> value, JsonSerializerOptions options)
         {

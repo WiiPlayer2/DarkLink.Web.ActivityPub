@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Runtime.Serialization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -18,7 +19,52 @@ internal class LinkedDataConverter : JsonConverterFactory
 
     private class Conv<T> : JsonConverter<T>
     {
-        public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => throw new NotImplementedException();
+        public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            var node = JsonSerializer.Deserialize<JsonNode>(ref reader, options);
+            if (node is not JsonObject nodeObj)
+                return default;
+
+            var valueType = typeToConvert; // TODO resolve type by @type
+            var metadata = valueType.GetCustomAttribute<LinkedDataAttribute>()!;
+            var properties = valueType.GetProperties();
+
+            //var obj = Activator.CreateInstance(valueType);
+            var obj = (T) FormatterServices.GetUninitializedObject(valueType);
+
+            foreach (var property in properties)
+            {
+                var mappedName = ResolvePropertyName2(metadata, property);
+                if (nodeObj.TryGetPropertyValue(mappedName, out var propertyNode))
+                {
+                    var value = propertyNode.Deserialize(property.PropertyType, options);
+                    property.SetValue(obj, value);
+                }
+            }
+
+            return obj;
+        }
+
+        private static string ResolvePropertyName(LinkedDataAttribute metadata, PropertyInfo propertyInfo)
+        {
+            var propertyNameAttribute = propertyInfo.GetCustomAttribute<JsonPropertyNameAttribute>();
+            if (propertyNameAttribute is not null)
+                return propertyNameAttribute.Name;
+
+            if (propertyInfo.Name.Equals("id", StringComparison.InvariantCultureIgnoreCase))
+                return "@id";
+
+            if (propertyInfo.Name.Equals("type", StringComparison.InvariantCultureIgnoreCase))
+                return "@type";
+
+            if (propertyInfo.Name.Equals("container", StringComparison.InvariantCultureIgnoreCase))
+                return "@container";
+
+            var name = $"{metadata.Path}{propertyInfo.Name.Uncapitalize()}";
+            return name;
+        }
+
+        private static string ResolvePropertyName2(LinkedDataAttribute metadata, PropertyInfo propertyInfo) => propertyInfo.Name.Uncapitalize();
 
         public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
         {
@@ -41,29 +87,10 @@ internal class LinkedDataConverter : JsonConverterFactory
 
             KeyValuePair<string, JsonNode?> MapProperty(PropertyInfo propertyInfo)
             {
-                var name = ResolvePropertyName(propertyInfo);
+                var name = ResolvePropertyName(metadata, propertyInfo);
                 var propertyValue = propertyInfo.GetValue(value);
                 var node = JsonSerializer.SerializeToNode(propertyValue, options);
                 return new KeyValuePair<string, JsonNode?>(name, node);
-            }
-
-            string ResolvePropertyName(PropertyInfo propertyInfo)
-            {
-                var propertyNameAttribute = propertyInfo.GetCustomAttribute<JsonPropertyNameAttribute>();
-                if (propertyNameAttribute is not null)
-                    return propertyNameAttribute.Name;
-
-                if (propertyInfo.Name.Equals("id", StringComparison.InvariantCultureIgnoreCase))
-                    return "@id";
-
-                if (propertyInfo.Name.Equals("type", StringComparison.InvariantCultureIgnoreCase))
-                    return "@type";
-
-                if (propertyInfo.Name.Equals("container", StringComparison.InvariantCultureIgnoreCase))
-                    return "@container";
-
-                var name = $"{metadata.Path}{propertyInfo.Name.Uncapitalize()}";
-                return name;
             }
         }
     }

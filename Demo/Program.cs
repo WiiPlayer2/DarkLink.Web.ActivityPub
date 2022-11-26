@@ -1,12 +1,21 @@
-﻿using System.Text.Json.Nodes;
+﻿using System.Text.Json;
+using System.Text.Json.Nodes;
 using DarkLink.Text.Json.NewtonsoftJsonMapper;
 using DarkLink.Util.JsonLd;
-using DarkLink.Web.ActivityPub.Types;
+using DarkLink.Web.ActivityPub.Serialization;
 using DarkLink.Web.ActivityPub.Types.Extended;
 using JsonLD.Core;
 using Newtonsoft.Json.Linq;
+using Constants = DarkLink.Web.ActivityPub.Types.Constants;
 
 const string LINE = "----------------------------------------";
+var jsonOptions = new JsonSerializerOptions
+{
+    Converters =
+    {
+        LinkToConverter.Instance,
+    },
+};
 
 //using var httpClient = new HttpClient();
 //var request = new HttpRequestMessage(HttpMethod.Get, "https://tech.lgbt/users/wiiplayer2/outbox")
@@ -30,8 +39,8 @@ Console.WriteLine(LINE);
 Console.WriteLine(recompacted);
 Console.WriteLine(LINE);
 
-var poco = LinkedDataSerializer.Deserialize<Person>(compact, Constants.Context);
-var node = LinkedDataSerializer.Serialize(poco, Constants.Context);
+var poco = LinkedDataSerializer.Deserialize<Person>(compact, Constants.Context, jsonOptions);
+var node = LinkedDataSerializer.Serialize(poco, Constants.Context, jsonOptions);
 
 Console.WriteLine(node);
 Console.WriteLine(LINE);

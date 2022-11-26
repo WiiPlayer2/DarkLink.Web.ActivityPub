@@ -9,6 +9,7 @@ using DarkLink.Web.ActivityPub.Types.Extended;
 using DarkLink.Web.WebFinger.Server;
 using Microsoft.AspNetCore.Http.Extensions;
 using ASLink = DarkLink.Web.ActivityPub.Types.Link;
+using Constants = DarkLink.Web.ActivityPub.Types.Constants;
 using Object = DarkLink.Web.ActivityPub.Types.Object;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -56,12 +57,12 @@ app.MapGet("/profiles/{username}.json", async ctx =>
         PreferredUsername = username,
         Name = $"Waldemar Tomme [{username}]",
         Summary = "Just testing around 🧪",
-        Url = DataList.From<LinkOr<ASLink>>(new Link<ASLink>(new Uri($"{ctx.Request.Scheme}://{ctx.Request.Host}/profiles/{username}"))),
-        Icon = DataList.From<LinkOr<Image>>(new Object<Image>(new Image
+        Url = DataList.From<LinkTo<Object>>(new Uri($"{ctx.Request.Scheme}://{ctx.Request.Host}/profiles/{username}")),
+        Icon = DataList.From<LinkTo<Image>>(new Image
         {
             MediaType = "image/png",
-            Url = DataList.From<LinkOr<ASLink>>(new Link<ASLink>(new Uri($"{ctx.Request.Scheme}://{ctx.Request.Host}/profile.png"))),
-        })),
+            Url = DataList.From<LinkTo<Object>>(new Uri($"{ctx.Request.Scheme}://{ctx.Request.Host}/profile.png")),
+        }),
     };
 
     var node = LinkedDataSerializer.Serialize(person, Constants.Context, jsonOptions);

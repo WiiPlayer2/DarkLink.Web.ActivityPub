@@ -21,20 +21,23 @@ internal class LinkOrConverter : JsonConverterFactory
 
     private class Conv<T> : JsonConverter<LinkOr<T>>
     {
+        private LinkOr<T> GetObject(JsonNode node, JsonSerializerOptions options)
+            => node.Deserialize<T>(options)!;
+
         public override LinkOr<T>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             var node = JsonSerializer.Deserialize<JsonNode>(ref reader, options);
             if (node is null)
                 return null;
-            return TryGetLink(node)
-                   ?? throw new NotImplementedException();
+            return TryGetLink(node, options) ?? GetObject(node, options);
         }
 
-        private LinkOr<T>? TryGetLink(JsonNode node)
+        private LinkOr<T>? TryGetLink(JsonNode node, JsonSerializerOptions options)
         {
-            var linkDto = node.Deserialize<LinkDto>();
-            if (linkDto is null)
+            if (node is not JsonObject {Count: 1} jsonObj || !jsonObj.ContainsKey("@id"))
                 return null;
+
+            var linkDto = node.Deserialize<LinkDto>(options)!;
             return new Link<T>(linkDto.Id);
         }
 
