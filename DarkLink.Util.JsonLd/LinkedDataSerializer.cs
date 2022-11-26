@@ -60,7 +60,19 @@ public class LinkedDataConverter2 : JsonConverter<LinkedData>
 
     public override void Write(Utf8JsonWriter writer, LinkedData value, JsonSerializerOptions options)
     {
-        throw new NotImplementedException();
+        var idNode = JsonSerializer.SerializeToNode(value.Id, options);
+        var typesNode = JsonSerializer.SerializeToNode(value.Types, options);
+        var properties = value.Properties
+            .ToDictionary(
+                kv => kv.Key.ToString(),
+                kv => JsonSerializer.SerializeToNode(kv.Value, options));
+
+        properties["@id"] = idNode;
+        properties["@type"] = typesNode;
+        properties["@value"] = value.Value.Copy();
+        var obj = new JsonObject(properties.Where(kv => kv.Value is not null));
+
+        JsonSerializer.Serialize(writer, obj, options);
     }
 
     private class UriEqualityComparer : EqualityComparer<Uri>
@@ -86,7 +98,7 @@ public static class LinkedDataSerializer
         return compacted.Deserialize<T>(options);
     }
 
-    public static LinkedData? Deserialize2(JsonNode node, JsonSerializerOptions? options = default)
+    public static LinkedData? DeserializeLinkedData(JsonNode node, JsonSerializerOptions? options = default)
     {
         options = Prepare2(options);
 
@@ -116,7 +128,11 @@ public static class LinkedDataSerializer
             Converters =
             {
                 LinkedDataConverter2.Instance,
+                LinkOrConverter.Instance,
                 DataListConverter.Instance,
+                LinkedDataListConverter.Instance,
+                ContextEntryConverter.Instance,
+                TermMappingConverter.Instance,
             },
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
         };
@@ -136,6 +152,20 @@ public static class LinkedDataSerializer
             }
         }
 
+        return node;
+    }
+
+    public static JsonNode? SerializeContext(LinkedDataList<ContextEntry> context, JsonSerializerOptions? options = default)
+    {
+        options = Prepare2(options);
+        return JsonSerializer.SerializeToNode(context, options);
+    }
+
+    public static JsonNode SerializeLinkedData(LinkedData linkedData, JsonSerializerOptions? options = default)
+    {
+        options = Prepare2(options);
+
+        var node = JsonSerializer.SerializeToNode(linkedData, options)!;
         return node;
     }
 }

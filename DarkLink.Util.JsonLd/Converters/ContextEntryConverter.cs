@@ -1,7 +1,6 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using DarkLink.Util.JsonLd.Attributes;
 using DarkLink.Util.JsonLd.Types;
 
 namespace DarkLink.Util.JsonLd.Converters;
@@ -59,6 +58,9 @@ internal class TermMappingConverter : JsonConverter<TermMapping>
         JsonSerializer.Serialize(writer, dto, options);
     }
 
-    [LinkedData(IsTypeless = true)]
-    private record Dto(Uri Id, Uri? Type, string? Container);
+    private record Dto(
+        [property: JsonPropertyName("@id")] Uri Id,
+        [property: JsonPropertyName("@type")] Uri? Type,
+        [property: JsonPropertyName("@container")]
+        string? Container);
 }

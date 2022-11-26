@@ -7,6 +7,12 @@ namespace DarkLink.Util.JsonLd;
 
 internal static class Helper
 {
+    public static TNode? Copy<TNode>(this TNode? source)
+        where TNode : JsonNode
+        => source is null
+            ? null
+            : (TNode) JsonNode.Parse(source.ToJsonString())!;
+
     public static T Create<T>(this Type openGenericType, params Type[] typeArguments)
     {
         var genericType = openGenericType.MakeGenericType(typeArguments);
