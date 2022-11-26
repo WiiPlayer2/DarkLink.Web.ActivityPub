@@ -11,9 +11,11 @@ public record LinkedData
 {
     public Uri? Id { get; init; }
 
-    public IReadOnlyDictionary<Uri, IReadOnlyList<LinkedData>> Properties { get; init; } = new Dictionary<Uri, IReadOnlyList<LinkedData>>();
+    public DataList<LinkedData> this[Uri property] => Properties.TryGetValue(property, out var value) ? value : default;
 
-    public DataList<Uri> Types { get; init; }
+    public IReadOnlyDictionary<Uri, DataList<LinkedData>> Properties { get; init; } = new Dictionary<Uri, DataList<LinkedData>>();
+
+    public DataList<Uri> Type { get; init; }
 
     public JsonValue? Value { get; init; }
 }
@@ -38,7 +40,7 @@ public class LinkedDataConverter2 : JsonConverter<LinkedData>
             return null;
 
         obj.TryDeserializeProperty<Uri>("@id", out var id, options);
-        obj.TryDeserializeProperty<DataList<Uri>>("@type", out var types, options);
+        obj.TryDeserializeProperty<DataList<Uri>>("@type", out var type, options);
         obj.TryDeserializeProperty<JsonValue>("@value", out var value, options);
 
         var keyValuePairs = obj
@@ -47,12 +49,12 @@ public class LinkedDataConverter2 : JsonConverter<LinkedData>
             .Select(kv => (new Uri(kv.Key), kv.Value.Deserialize<IReadOnlyList<LinkedData>>(options)!)) // if null then data is illegal
             .ToList();
         var properties = keyValuePairs
-            .ToDictionary(pair => pair.Item1, pair => pair.Item2, UriEqualityComparer.Default);
+            .ToDictionary(pair => pair.Item1, pair => DataList.FromItems(pair.Item2), UriEqualityComparer.Default);
 
         var linkedData = new LinkedData
         {
             Id = id,
-            Types = types,
+            Type = type,
             Value = value,
             Properties = properties,
         };
@@ -62,11 +64,11 @@ public class LinkedDataConverter2 : JsonConverter<LinkedData>
     public override void Write(Utf8JsonWriter writer, LinkedData value, JsonSerializerOptions options)
     {
         var idNode = JsonSerializer.SerializeToNode(value.Id, options);
-        var typesNode = JsonSerializer.SerializeToNode(value.Types, options);
+        var typesNode = JsonSerializer.SerializeToNode(value.Type, options);
         var properties = value.Properties
             .ToDictionary(
                 kv => kv.Key.ToString(),
-                kv => JsonSerializer.SerializeToNode(kv.Value, options));
+                kv => JsonSerializer.SerializeToNode(new List<LinkedData>(kv.Value), options));
 
         properties["@id"] = idNode;
         properties["@type"] = typesNode;
@@ -91,7 +93,12 @@ public class LinkedDataSerializationOptions
 {
     public LinkedDataSerializationOptions()
     {
-        Converters = new List<ILinkedDataConverter>();
+        Converters = new List<ILinkedDataConverter>
+        {
+            new ObjectConverter(),
+            new StringConverter(),
+            new UriConverter(),
+        };
     }
 
     public LinkedDataSerializationOptions(LinkedDataSerializationOptions copyFrom)
@@ -118,7 +125,7 @@ public static class LinkedDataSerializer
     {
         options ??= new LinkedDataSerializationOptions();
 
-        var converter = options.Converters.FirstOrDefault(c => c.CanConvert(targetType)) ?? throw new InvalidOperationException($"Unable to deserialize type {targetType.AssemblyQualifiedName}.");
+        var converter = options.Converters.LastOrDefault(c => c.CanConvert(targetType)) ?? throw new InvalidOperationException($"Unable to deserialize type {targetType.AssemblyQualifiedName}.");
         var result = converter.Convert(data, targetType, options);
         return result;
     }

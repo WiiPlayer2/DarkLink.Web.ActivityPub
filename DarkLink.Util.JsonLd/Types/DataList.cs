@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Diagnostics;
 using DarkLink.Util.JsonLd.Attributes;
 
 namespace DarkLink.Util.JsonLd.Types;
@@ -15,7 +16,7 @@ public static class DataList
         => new(values.ToList());
 }
 
-[ContextProxy(ProxyTypeResolver = typeof(DataListContextProxyResolver), IgnoreProperties = true)]
+[ContextProxy(ProxyTypeResolver = typeof(DataListContextProxyResolver), IgnoreProperties = true), DebuggerDisplay("{ToDebuggerString(),nq}")]
 public readonly struct DataList<T> : IReadOnlyList<T>
 {
     private readonly IReadOnlyList<T>? items;
@@ -24,6 +25,10 @@ public readonly struct DataList<T> : IReadOnlyList<T>
     {
         this.items = items;
     }
+
+    public bool IsEmpty => Count == 0;
+
+    public bool IsValue => Count == 1;
 
     private IReadOnlyList<T> Items => items ?? Array.Empty<T>();
 
@@ -46,6 +51,8 @@ public readonly struct DataList<T> : IReadOnlyList<T>
     public T this[int index] => Items[index];
 
     public static implicit operator DataList<T>(T? value) => DataList.From(value);
+
+    private string ToDebuggerString() => $"[{string.Join(", ", this)}]";
 }
 
 internal class DataListContextProxyResolver : IContextProxyResolver

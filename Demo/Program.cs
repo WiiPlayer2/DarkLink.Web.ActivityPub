@@ -1,7 +1,10 @@
 ﻿using System.Text.Json;
 using DarkLink.Text.Json.NewtonsoftJsonMapper;
 using DarkLink.Util.JsonLd;
+using DarkLink.Util.JsonLd.Attributes;
+using DarkLink.Util.JsonLd.Types;
 using DarkLink.Web.ActivityPub.Serialization;
+using JsonLD.Core;
 using Newtonsoft.Json.Linq;
 
 const string LINE = "----------------------------------------";
@@ -26,12 +29,12 @@ var jsonOptions = new JsonSerializerOptions
 
 var json = await File.ReadAllTextAsync("./person.json");
 var compact = JObject.Parse(json).Map();
-//var expanded = JsonLdProcessor.Expand(compact.Map()).First().Map()!;
+var expanded = JsonLdProcessor.Expand(compact.Map()).First().Map()!;
 //var recompacted = expanded.Compact(new JsonObject());
 //Console.WriteLine(compact);
 //Console.WriteLine(LINE);
-//Console.WriteLine(expanded);
-//Console.WriteLine(LINE);
+Console.WriteLine(expanded);
+Console.WriteLine(LINE);
 //Console.WriteLine(recompacted);
 //Console.WriteLine(LINE);
 
@@ -54,4 +57,32 @@ var myPerson = LinkedDataSerializer.Deserialize2<MyPerson>(ld);
 
 Console.WriteLine("done.");
 
-internal record MyPerson { }
+internal record MyPerson
+{
+    [LinkedDataProperty("https://www.w3.org/ns/activitystreams#icon")]
+    public MyImage? Icon { get; init; }
+
+    public Uri? Id { get; init; }
+
+    [LinkedDataProperty("https://www.w3.org/ns/activitystreams#image")]
+    public MyImage? Image { get; init; }
+
+    [LinkedDataProperty("https://www.w3.org/ns/activitystreams#name")]
+    public string? Name { get; init; }
+
+    [LinkedDataProperty("https://www.w3.org/ns/activitystreams#preferredUsername")]
+    public string? PreferredUsername { get; init; }
+
+    public DataList<Uri> Type { get; init; }
+}
+
+internal record MyImage
+{
+    [LinkedDataProperty("https://www.w3.org/ns/activitystreams#mediaType")]
+    public string? MediaType { get; init; }
+
+    public DataList<Uri> Type { get; init; }
+
+    [LinkedDataProperty("https://www.w3.org/ns/activitystreams#url")]
+    public Uri? Url { get; init; }
+}
