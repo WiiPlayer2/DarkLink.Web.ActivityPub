@@ -1,6 +1,4 @@
 ﻿using System.Collections;
-using System.Diagnostics;
-using DarkLink.Util.JsonLd.Attributes;
 
 namespace DarkLink.Util.JsonLd.Types;
 
@@ -16,7 +14,6 @@ public static class DataList
         => new(values.ToList());
 }
 
-[ContextProxy(ProxyTypeResolver = typeof(DataListContextProxyResolver), IgnoreProperties = true), DebuggerDisplay("{ToDebuggerString(),nq}")]
 public readonly struct DataList<T> : IReadOnlyList<T>
 {
     private readonly IReadOnlyList<T>? items;
@@ -53,54 +50,4 @@ public readonly struct DataList<T> : IReadOnlyList<T>
     public static implicit operator DataList<T>(T? value) => DataList.From(value);
 
     private string ToDebuggerString() => $"[{string.Join(", ", this)}]";
-}
-
-internal class DataListContextProxyResolver : IContextProxyResolver
-{
-    public IEnumerable<Type> ResolveProxyTypes(Type proxiedType) => new[] {proxiedType.GenericTypeArguments[0]};
-}
-
-public readonly struct LinkedDataList<T> : IReadOnlyList<LinkOr<T>>
-{
-    private readonly IReadOnlyList<LinkOr<T>>? items;
-
-    public LinkedDataList(IReadOnlyList<LinkOr<T>> items)
-    {
-        this.items = items;
-    }
-
-    private IReadOnlyList<LinkOr<T>> Items => items ?? Array.Empty<LinkOr<T>>();
-
-    public LinkOr<T>? Value
-    {
-        get
-        {
-            if (Count > 1)
-                throw new InvalidOperationException("Access is only allowed for single or no items.");
-            return Count == 1 ? Items[0] : default;
-        }
-    }
-
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-    public IEnumerator<LinkOr<T>> GetEnumerator() => Items.GetEnumerator();
-
-    public int Count => Items.Count;
-
-    public LinkOr<T> this[int index] => Items[index];
-
-    public static implicit operator LinkedDataList<T>(T? value) => (LinkOr<T>?) value;
-
-    public static implicit operator LinkedDataList<T>(Uri iri) => (LinkOr<T>) iri;
-
-    public static implicit operator LinkedDataList<T>(LinkOr<T>? value)
-        => value is null
-            ? default
-            : new LinkedDataList<T>(new[] {value});
-
-    public static implicit operator LinkedDataList<T>(DataList<LinkOr<T>> list)
-        => new(list);
-
-    public static implicit operator DataList<LinkOr<T>>(LinkedDataList<T> list)
-        => new(list);
 }

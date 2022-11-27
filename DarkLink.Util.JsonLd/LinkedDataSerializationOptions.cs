@@ -32,7 +32,7 @@ public class LinkedDataSerializationOptions
         {
             Converters =
             {
-                LinkedDataConverter2.Instance,
+                LinkedDataConverter.Instance,
                 LinkOrConverter.Instance,
                 DataListConverter.Instance,
                 LinkedDataListConverter.Instance,

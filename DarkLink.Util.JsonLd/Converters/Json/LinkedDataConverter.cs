@@ -1,97 +1,65 @@
-﻿using System.Reflection;
-using System.Runtime.Serialization;
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using DarkLink.Util.JsonLd.Attributes;
+using DarkLink.Util.JsonLd.Types;
 
 namespace DarkLink.Util.JsonLd.Converters.Json;
 
-internal class LinkedDataConverter : JsonConverterFactory
+public class LinkedDataConverter : JsonConverter<LinkedData>
 {
+    private static readonly string[] keywords =
+    {
+        "@id",
+        "@type",
+        "@value",
+    };
+
     private LinkedDataConverter() { }
 
     public static LinkedDataConverter Instance { get; } = new();
 
-    public override bool CanConvert(Type typeToConvert) => typeToConvert.GetCustomAttribute<LinkedDataAttribute>() is not null;
-
-    public override JsonConverter? CreateConverter(Type typeToConvert, JsonSerializerOptions options) => typeof(Conv<>).Create<JsonConverter>(typeToConvert);
-
-    private class Conv<T> : JsonConverter<T>
+    public override LinkedData? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        var obj = JsonSerializer.Deserialize<JsonObject>(ref reader, options);
+        if (obj is null)
+            return null;
+
+        obj.TryDeserializeProperty<Uri>("@id", out var id, options);
+        obj.TryDeserializeProperty<DataList<Uri>>("@type", out var type, options);
+        obj.TryDeserializeProperty<JsonValue>("@value", out var value, options);
+
+        var keyValuePairs = obj
+            .OrderBy(o => o.Key)
+            .Where(kv => !keywords.Contains(kv.Key))
+            .Select(kv => (new Uri(kv.Key), kv.Value.Deserialize<IReadOnlyList<LinkedData>>(options)!)) // if null then data is illegal
+            .ToList();
+        var properties = keyValuePairs
+            .ToDictionary(pair => pair.Item1, pair => DataList.FromItems(pair.Item2), UriEqualityComparer.Default);
+
+        var linkedData = new LinkedData
         {
-            var node = JsonSerializer.Deserialize<JsonNode>(ref reader, options);
-            if (node is not JsonObject nodeObj)
-                return default;
+            Id = id,
+            Type = type,
+            Value = value,
+            Properties = properties,
+        };
+        return linkedData;
+    }
 
-            var valueType = typeToConvert; // TODO resolve type by @type
-            var metadata = valueType.GetCustomAttribute<LinkedDataAttribute>()!;
-            var properties = valueType.GetProperties();
+    public override void Write(Utf8JsonWriter writer, LinkedData value, JsonSerializerOptions options)
+    {
+        var idNode = JsonSerializer.SerializeToNode(value.Id, options);
+        var typesNode = JsonSerializer.SerializeToNode(value.Type, options);
+        var properties = value.Properties
+            .ToDictionary(
+                kv => kv.Key.ToString(),
+                kv => JsonSerializer.SerializeToNode(new List<LinkedData>(kv.Value), options));
 
-            //var obj = Activator.CreateInstance(valueType);
-            var obj = (T) FormatterServices.GetUninitializedObject(valueType);
+        properties["@id"] = idNode;
+        properties["@type"] = typesNode;
+        properties["@value"] = value.Value.Copy();
+        var obj = new JsonObject(properties.Where(kv => kv.Value is not null));
 
-            foreach (var property in properties)
-            {
-                var mappedName = ResolvePropertyName2(metadata, property);
-                if (nodeObj.TryGetPropertyValue(mappedName, out var propertyNode))
-                {
-                    var value = propertyNode.Deserialize(property.PropertyType, options);
-                    property.SetValue(obj, value);
-                }
-            }
-
-            return obj;
-        }
-
-        private static string ResolvePropertyName(LinkedDataAttribute metadata, PropertyInfo propertyInfo)
-        {
-            var propertyNameAttribute = propertyInfo.GetCustomAttribute<JsonPropertyNameAttribute>();
-            if (propertyNameAttribute is not null)
-                return propertyNameAttribute.Name;
-
-            if (propertyInfo.Name.Equals("id", StringComparison.InvariantCultureIgnoreCase))
-                return "@id";
-
-            if (propertyInfo.Name.Equals("type", StringComparison.InvariantCultureIgnoreCase))
-                return "@type";
-
-            if (propertyInfo.Name.Equals("container", StringComparison.InvariantCultureIgnoreCase))
-                return "@container";
-
-            var name = $"{metadata.Path}{propertyInfo.Name.Uncapitalize()}";
-            return name;
-        }
-
-        private static string ResolvePropertyName2(LinkedDataAttribute metadata, PropertyInfo propertyInfo) => propertyInfo.Name.Uncapitalize();
-
-        public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
-        {
-            var valueType = value?.GetType() ?? typeof(T);
-            var metadata = valueType.GetCustomAttribute<LinkedDataAttribute>()!;
-            var properties = valueType.GetProperties();
-            var values = properties
-                .Select(MapProperty)
-                .Where(o => o.Value is not null);
-            var node = new JsonObject(values);
-
-            if (!node.ContainsKey("@type") && !metadata.IsTypeless)
-            {
-                var typeName = metadata.Type ?? valueType.Name;
-                var fullType = $"{metadata.Path}{typeName}";
-                node["@type"] = fullType;
-            }
-
-            JsonSerializer.Serialize(writer, node, options);
-
-            KeyValuePair<string, JsonNode?> MapProperty(PropertyInfo propertyInfo)
-            {
-                var name = ResolvePropertyName(metadata, propertyInfo);
-                var propertyValue = propertyInfo.GetValue(value);
-                var node = JsonSerializer.SerializeToNode(propertyValue, options);
-                return new KeyValuePair<string, JsonNode?>(name, node);
-            }
-        }
+        JsonSerializer.Serialize(writer, obj, options);
     }
 }

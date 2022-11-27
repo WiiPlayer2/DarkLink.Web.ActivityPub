@@ -11,13 +11,13 @@ var linkedDataOptions = new LinkedDataSerializationOptions
 {
     Converters =
     {
-        new LinkToConverter2(),
+        new LinkToConverter(),
     },
     JsonSerializerOptions =
     {
         Converters =
         {
-            LinkToConverter.Instance,
+            //LinkToConverter.Instance,
         },
     },
 };

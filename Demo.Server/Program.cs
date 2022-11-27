@@ -22,14 +22,14 @@ var linkedDataOptions = new LinkedDataSerializationOptions
 {
     Converters =
     {
-        new LinkToConverter2(),
+        new LinkToConverter(),
         new LinkableListConverter(),
     },
     JsonSerializerOptions =
     {
         Converters =
         {
-            LinkToConverter.Instance,
+            //LinkToConverter.Instance,
         },
     },
 };
