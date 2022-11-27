@@ -1,24 +1,24 @@
-﻿using System.Text.Json;
-using DarkLink.Text.Json.NewtonsoftJsonMapper;
+﻿using DarkLink.Text.Json.NewtonsoftJsonMapper;
 using DarkLink.Util.JsonLd;
 using DarkLink.Web.ActivityPub.Serialization;
 using DarkLink.Web.ActivityPub.Types.Extended;
 using JsonLD.Core;
 using Newtonsoft.Json.Linq;
+using Constants = DarkLink.Web.ActivityPub.Types.Constants;
 
 const string LINE = "----------------------------------------";
-var jsonOptions = new JsonSerializerOptions
-{
-    Converters =
-    {
-        LinkToConverter.Instance,
-    },
-};
 var linkedDataOptions = new LinkedDataSerializationOptions
 {
     Converters =
     {
         new LinkToConverter2(),
+    },
+    JsonSerializerOptions =
+    {
+        Converters =
+        {
+            LinkToConverter.Instance,
+        },
     },
 };
 
@@ -50,7 +50,7 @@ Console.WriteLine(LINE);
 //Console.WriteLine(node);
 //Console.WriteLine(LINE);
 
-var ld = LinkedDataSerializer.DeserializeLinkedData(compact, jsonOptions)!;
+var ld = LinkedDataSerializer.DeserializeLinkedData(compact, linkedDataOptions.JsonSerializerOptions)!;
 //var ldNode = LinkedDataSerializer.SerializeLinkedData(ld, jsonOptions);
 //var compactLdNode = ldNode.Compact(LinkedDataSerializer.SerializeContext(Constants.Context)!);
 
@@ -60,8 +60,7 @@ var ld = LinkedDataSerializer.DeserializeLinkedData(compact, jsonOptions)!;
 //Console.WriteLine(LINE);
 
 var myPerson = LinkedDataSerializer.DeserializeFromLinkedData<Person>(ld, linkedDataOptions);
-var myLinkedData = LinkedDataSerializer.SerializeToLinkedData(myPerson, options: linkedDataOptions);
-var myNode = LinkedDataSerializer.SerializeLinkedData(myLinkedData);
+var myNode = LinkedDataSerializer.Serialize2(myPerson, context: Constants.Context, options: linkedDataOptions);
 
 Console.WriteLine(myNode);
 Console.WriteLine(LINE);

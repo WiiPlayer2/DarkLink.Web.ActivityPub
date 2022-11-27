@@ -18,6 +18,16 @@ public static class LinkedDataSerializer
         return compacted.Deserialize<T>(options);
     }
 
+    public static T? Deserialize2<T>(JsonNode node, LinkedDataList<ContextEntry> context = default, LinkedDataSerializationOptions? options = default)
+    {
+        options ??= new LinkedDataSerializationOptions();
+
+        var expanded = node.Expand();
+        var linkedData = DeserializeLinkedData(expanded, options.JsonSerializerOptions);
+        var value = DeserializeFromLinkedData<T>(linkedData, options);
+        return value;
+    }
+
     public static object? DeserializeFromLinkedData(DataList<LinkedData> data, Type targetType, LinkedDataSerializationOptions? options = default)
     {
         options ??= new LinkedDataSerializationOptions();
@@ -85,6 +95,16 @@ public static class LinkedDataSerializer
         }
 
         return node;
+    }
+
+    public static JsonNode? Serialize2(object? value, Type? targetType = default, LinkedDataList<ContextEntry> context = default, LinkedDataSerializationOptions? options = default)
+    {
+        options ??= new LinkedDataSerializationOptions();
+        var linkedData = SerializeToLinkedData(value, targetType, options);
+        var expanded = SerializeLinkedData(linkedData, options.JsonSerializerOptions);
+        var contextNode = SerializeContext(context, options.JsonSerializerOptions);
+        var compactNode = expanded.Compact(contextNode ?? new JsonObject());
+        return compactNode;
     }
 
     public static JsonNode? SerializeContext(LinkedDataList<ContextEntry> context, JsonSerializerOptions? options = default)
