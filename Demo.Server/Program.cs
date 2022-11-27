@@ -113,7 +113,7 @@ app.MapPost("/profiles/{username}/inbox", async ctx =>
 
     if (!CheckRequest(ctx, out var username)) return;
 
-    var data = await ctx.Request.ReadLinkedData<DataList<LinkedData>>();
+    var data = await ctx.Request.ReadLinkedData<TypedActivity>(linkedDataOptions);
 });
 
 app.MapGet("/notes/{username}/{note}", async ctx =>

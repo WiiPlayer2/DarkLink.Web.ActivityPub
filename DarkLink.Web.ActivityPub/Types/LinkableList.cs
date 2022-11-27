@@ -1,8 +1,10 @@
 ﻿using System.Collections;
+using System.Diagnostics;
 using DarkLink.Util.JsonLd.Types;
 
 namespace DarkLink.Web.ActivityPub.Types;
 
+[DebuggerDisplay("{ToDebuggerString(),nq}")]
 public readonly struct LinkableList<T> : IReadOnlyList<LinkTo<T>>
     where T : Object
 {
@@ -47,4 +49,6 @@ public readonly struct LinkableList<T> : IReadOnlyList<LinkTo<T>>
 
     public static implicit operator DataList<LinkTo<T>>(LinkableList<T> list)
         => new(list);
+
+    private string ToDebuggerString() => $"[{string.Join(", ", this)}]";
 }

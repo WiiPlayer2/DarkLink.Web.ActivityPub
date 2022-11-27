@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Diagnostics;
 
 namespace DarkLink.Util.JsonLd.Types;
 
@@ -14,6 +15,7 @@ public static class DataList
         => new(values.ToList());
 }
 
+[DebuggerDisplay("{ToDebuggerString(),nq}")]
 public readonly struct DataList<T> : IReadOnlyList<T>
 {
     private readonly IReadOnlyList<T>? items;
