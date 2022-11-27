@@ -1,5 +1,4 @@
 ﻿using DarkLink.Util.JsonLd.Attributes;
-using DarkLink.Util.JsonLd.Types;
 using DarkLink.Web.ActivityPub.Types.Extended;
 
 namespace DarkLink.Web.ActivityPub.Types;
@@ -46,30 +45,30 @@ public record Object : Entity
     public LinkableList<Object> Url { get; init; }
 }
 
-public abstract record BaseCollectionPage<TPage>
+public abstract record BaseCollectionPage<TPage> : Object
     where TPage : BaseCollectionPage<TPage>
 {
     [LinkedDataProperty($"{Constants.NAMESPACE}next")]
-    public LinkOr<TPage>? Next { get; init; }
+    public LinkTo<TPage>? Next { get; init; }
 
     [LinkedDataProperty($"{Constants.NAMESPACE}partOf")]
-    public LinkOr<Collection>? PartOf { get; init; }
+    public LinkTo<Collection>? PartOf { get; init; }
 
     [LinkedDataProperty($"{Constants.NAMESPACE}prev")]
-    public LinkOr<TPage>? Prev { get; init; }
+    public LinkTo<TPage>? Prev { get; init; }
 }
 
 public abstract record BaseCollection<TPage> : Object
     where TPage : BaseCollectionPage<TPage>
 {
     [LinkedDataProperty($"{Constants.NAMESPACE}current")]
-    public LinkOr<TPage>? Current { get; init; }
+    public LinkTo<TPage>? Current { get; init; }
 
     [LinkedDataProperty($"{Constants.NAMESPACE}first")]
-    public LinkOr<TPage>? First { get; init; }
+    public LinkTo<TPage>? First { get; init; }
 
     [LinkedDataProperty($"{Constants.NAMESPACE}last")]
-    public LinkOr<TPage>? Last { get; init; }
+    public LinkTo<TPage>? Last { get; init; }
 
     [LinkedDataProperty($"{Constants.NAMESPACE}totalItems")]
     public int TotalItems { get; init; }
@@ -115,3 +114,6 @@ public record Activity : Object
     [LinkedDataProperty($"{Constants.NAMESPACE}object")]
     public LinkableList<Object> Object { get; init; }
 }
+
+[LinkedDataType($"{Constants.NAMESPACE}IntransitiveActivity")]
+public record IntransitiveActivity : Activity;
