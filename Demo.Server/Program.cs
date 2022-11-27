@@ -3,18 +3,22 @@ using System.Net;
 using DarkLink.Util.JsonLd;
 using DarkLink.Util.JsonLd.Types;
 using DarkLink.Web.ActivityPub.Serialization;
+using DarkLink.Web.ActivityPub.Server;
 using DarkLink.Web.ActivityPub.Types;
 using DarkLink.Web.ActivityPub.Types.Extended;
 using DarkLink.Web.WebFinger.Server;
 using Microsoft.AspNetCore.Http.Extensions;
+using Microsoft.AspNetCore.HttpOverrides;
 using ASLink = DarkLink.Web.ActivityPub.Types.Link;
 using Constants = DarkLink.Web.ActivityPub.Types.Constants;
 using Object = DarkLink.Web.ActivityPub.Types.Object;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddWebFinger<ResourceDescriptorProvider>();
+builder.Services.Configure<ForwardedHeadersOptions>(options => { options.ForwardedHeaders = ForwardedHeaders.All; });
 
 var app = builder.Build();
+app.UseForwardedHeaders();
 app.UseWebFinger();
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
 
@@ -58,7 +62,9 @@ app.MapGet("/profiles/{username}.json", async ctx =>
     ctx.Response.Headers.CacheControl = "max-age=0, private, must-revalidate";
     ctx.Response.Headers.ContentType = "application/activity+json; charset=utf-8";
 
-    var person = new Person(new Uri($"{ctx.Request.Scheme}://{ctx.Request.Host}/profiles/{username}/inbox"), new Uri($"{ctx.Request.Scheme}://{ctx.Request.Host}/profiles/{username}/outbox"))
+    var person = new Person(
+        new Uri($"{ctx.Request.Scheme}://{ctx.Request.Host}/profiles/{username}/inbox"),
+        new Uri($"{ctx.Request.Scheme}://{ctx.Request.Host}/profiles/{username}/outbox"))
     {
         Id = new Uri($"{ctx.Request.Scheme}://{ctx.Request.Host}/profiles/{username}.json"),
         PreferredUsername = username,
@@ -101,6 +107,15 @@ app.MapGet("/profiles/{username}/outbox", async ctx =>
     await ctx.Response.WriteAsync(node?.ToString() ?? string.Empty, ctx.RequestAborted);
 });
 
+app.MapPost("/profiles/{username}/inbox", async ctx =>
+{
+    await DumpRequestAsync("[POST] Inbox", ctx.Request);
+
+    if (!CheckRequest(ctx, out var username)) return;
+
+    var data = await ctx.Request.ReadLinkedData<DataList<LinkedData>>();
+});
+
 app.MapGet("/notes/{username}/{note}", async ctx =>
 {
     await DumpRequestAsync("Note", ctx.Request);
@@ -136,19 +151,25 @@ app.MapMethods(
     new[] {HttpMethods.Get, HttpMethods.Post},
     async ctx =>
     {
-        await DumpRequestAsync("<none>", ctx.Request);
+        await DumpRequestAsync("<none>", ctx.Request, true);
         ctx.Response.StatusCode = (int) HttpStatusCode.InternalServerError;
         await ctx.Response.CompleteAsync();
     });
 
 app.Run();
 
-async Task DumpRequestAsync(string topic, HttpRequest request)
+async Task DumpRequestAsync(string topic, HttpRequest request, bool dumpBody = false)
 {
     var headers = string.Join('\n', request.Headers.Select(h => $"{h.Key}: {h.Value}"));
     var query = string.Join('\n', request.Query.Select(q => $"{q.Key}={q.Value}"));
-    using var reader = new StreamReader(request.Body);
-    var body = await reader.ReadToEndAsync();
+
+    var body = "<no dump>";
+    if (dumpBody)
+    {
+        using var reader = new StreamReader(request.Body);
+        body = await reader.ReadToEndAsync();
+    }
+
     logger.LogDebug($"{topic}\n{request.Method} {request.GetDisplayUrl()}\n{query}\n{headers}\n{body}");
 }
 

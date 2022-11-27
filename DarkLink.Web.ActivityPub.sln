@@ -30,6 +30,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{FA2EF8
 		Directory.Build.props = Directory.Build.props
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DarkLink.Web.ActivityPub.Server", "DarkLink.Web.ActivityPub.Server\DarkLink.Web.ActivityPub.Server.csproj", "{2DB14492-3B92-4017-A55C-29409D34EF34}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -72,6 +74,10 @@ Global
 		{3BB1E464-F08E-4528-B7A7-31A13E151BF9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3BB1E464-F08E-4528-B7A7-31A13E151BF9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3BB1E464-F08E-4528-B7A7-31A13E151BF9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2DB14492-3B92-4017-A55C-29409D34EF34}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2DB14492-3B92-4017-A55C-29409D34EF34}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2DB14492-3B92-4017-A55C-29409D34EF34}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2DB14492-3B92-4017-A55C-29409D34EF34}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

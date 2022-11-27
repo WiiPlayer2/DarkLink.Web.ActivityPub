@@ -12,7 +12,7 @@ internal class ResourceDescriptorProvider : IResourceDescriptorProvider
         if (!resource.LocalPath.EndsWith($"@{request.Host}"))
             return default;
 
-        var username = resource.LocalPath[..^request.Host.ToString().Length];
+        var username = resource.LocalPath[..^(request.Host.ToString().Length + 1)];
 
         if (!Directory.Exists("./data"))
             Directory.CreateDirectory("./data");

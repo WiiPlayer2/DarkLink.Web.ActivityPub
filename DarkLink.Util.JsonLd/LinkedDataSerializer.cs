@@ -6,7 +6,7 @@ namespace DarkLink.Util.JsonLd;
 
 public static class LinkedDataSerializer
 {
-    public static T? Deserialize<T>(JsonNode node, LinkedDataList<ContextEntry> context = default, LinkedDataSerializationOptions? options = default)
+    public static T? Deserialize<T>(JsonNode node, LinkedDataSerializationOptions? options = default)
     {
         options ??= new LinkedDataSerializationOptions();
 

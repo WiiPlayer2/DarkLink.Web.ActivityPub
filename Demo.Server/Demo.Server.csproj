@@ -8,7 +8,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\DarkLink.Web.ActivityPub\DarkLink.Web.ActivityPub.csproj" />
+		<ProjectReference Include="..\DarkLink.Web.ActivityPub.Server\DarkLink.Web.ActivityPub.Server.csproj" />
 		<ProjectReference Include="..\DarkLink.Web.WebFinger.Server\DarkLink.Web.WebFinger.Server.csproj" />
 	</ItemGroup>
 
