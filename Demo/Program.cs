@@ -60,7 +60,7 @@ var ld = LinkedDataSerializer.DeserializeLinkedData(compact, linkedDataOptions.J
 //Console.WriteLine(LINE);
 
 var myPerson = LinkedDataSerializer.DeserializeFromLinkedData<Person>(ld, linkedDataOptions);
-var myNode = LinkedDataSerializer.Serialize2(myPerson, context: Constants.Context, options: linkedDataOptions);
+var myNode = LinkedDataSerializer.Serialize(myPerson, Constants.Context, linkedDataOptions);
 
 Console.WriteLine(myNode);
 Console.WriteLine(LINE);

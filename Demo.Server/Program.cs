@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Net;
-using System.Text.Json;
 using DarkLink.Util.JsonLd;
 using DarkLink.Util.JsonLd.Types;
 using DarkLink.Web.ActivityPub.Serialization;
@@ -19,11 +18,19 @@ var app = builder.Build();
 app.UseWebFinger();
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
 
-var jsonOptions = new JsonSerializerOptions
+var linkedDataOptions = new LinkedDataSerializationOptions
 {
     Converters =
     {
-        LinkToConverter.Instance,
+        new LinkToConverter2(),
+        new LinkableListConverter(),
+    },
+    JsonSerializerOptions =
+    {
+        Converters =
+        {
+            LinkToConverter.Instance,
+        },
     },
 };
 
@@ -65,7 +72,7 @@ app.MapGet("/profiles/{username}.json", async ctx =>
         }),
     };
 
-    var node = LinkedDataSerializer.Serialize(person, Constants.Context, jsonOptions);
+    var node = LinkedDataSerializer.Serialize(person, Constants.Context, linkedDataOptions);
 
     await ctx.Response.WriteAsync(node?.ToString() ?? string.Empty, ctx.RequestAborted);
 });
@@ -85,10 +92,10 @@ app.MapGet("/profiles/{username}/outbox", async ctx =>
     var outboxCollection = new OrderedCollection
     {
         TotalItems = activities.Length,
-        OrderedItems = DataList.FromItems<LinkOr<Object>>(activities.Select(a => new Object<Object>(a))),
+        OrderedItems = DataList.FromItems(activities.Select(a => (LinkTo<Object>) a!)),
     };
 
-    var node = LinkedDataSerializer.Serialize(outboxCollection, Constants.Context, jsonOptions);
+    var node = LinkedDataSerializer.Serialize(outboxCollection, Constants.Context, linkedDataOptions);
 
     ctx.Response.Headers.ContentType = "application/activity+json; charset=utf-8";
     await ctx.Response.WriteAsync(node?.ToString() ?? string.Empty, ctx.RequestAborted);
@@ -103,7 +110,7 @@ app.MapGet("/notes/{username}/{note}", async ctx =>
         || noteFileRaw is not string noteFile) return;
 
     var note = await GetNoteAsync(ctx.Request.Scheme, ctx.Request.Host.ToString(), username, noteFile, ctx.RequestAborted);
-    var node = LinkedDataSerializer.Serialize(note, Constants.Context, jsonOptions);
+    var node = LinkedDataSerializer.Serialize(note, Constants.Context, linkedDataOptions);
 
     ctx.Response.Headers.ContentType = "application/activity+json; charset=utf-8";
     await ctx.Response.WriteAsync(node?.ToString() ?? string.Empty, ctx.RequestAborted);
@@ -118,7 +125,7 @@ app.MapGet("/notes/{username}/{note}/activity", async ctx =>
         || noteFileRaw is not string noteFile) return;
 
     var activity = await GetNoteActivityAsync(ctx.Request.Scheme, ctx.Request.Host.ToString(), username, noteFile, ctx.RequestAborted);
-    var node = LinkedDataSerializer.Serialize(activity, Constants.Context, jsonOptions);
+    var node = LinkedDataSerializer.Serialize(activity, Constants.Context, linkedDataOptions);
 
     ctx.Response.Headers.ContentType = "application/activity+json; charset=utf-8";
     await ctx.Response.WriteAsync(node?.ToString() ?? string.Empty, ctx.RequestAborted);
@@ -171,8 +178,8 @@ async Task<Note> GetNoteAsync(string scheme, string host, string username, strin
     return new Note
     {
         Id = new Uri($"{scheme}://{host}/notes/{username}/{fileInfo.Name}"),
-        To = DataList.From<LinkOr<Object>>(new Link<Object>(new Uri("https://www.w3.org/ns/activitystreams#Public"))),
-        AttributedTo = DataList.From<LinkOr<Object>>(new Link<Object>(new Uri($"{scheme}://{host}/profiles/{username}.json"))),
+        To = DataList.From<LinkTo<Object>>(new Uri("https://www.w3.org/ns/activitystreams#Public")),
+        AttributedTo = DataList.From<LinkTo<Object>>(new Uri($"{scheme}://{host}/profiles/{username}.json")),
         //Published = fileInfo.CreationTime,
         Content = await File.ReadAllTextAsync(fileInfo.FullName, cancellationToken),
     };

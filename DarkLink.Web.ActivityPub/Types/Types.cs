@@ -1,5 +1,4 @@
-﻿using System.Text.Json.Serialization;
-using DarkLink.Util.JsonLd;
+﻿using DarkLink.Util.JsonLd;
 using DarkLink.Util.JsonLd.Attributes;
 using DarkLink.Util.JsonLd.Types;
 using DarkLink.Web.ActivityPub.Types.Extended;
@@ -52,10 +51,12 @@ internal class ActivityStreamsContextProxyResolver : IContextProxyResolver
 [ContextProxy(ProxyTypeResolver = typeof(ActivityStreamsContextProxyResolver))]
 public abstract record Entity
 {
-    public DataList<LinkOr<Object>> AttributedTo { get; init; }
+    [LinkedDataProperty($"{Constants.NAMESPACE}attributedTo")]
+    public LinkableList<Object> AttributedTo { get; init; }
 
-    [LinkedData("@id")] public Uri? Id { get; init; }
+    public Uri? Id { get; init; }
 
+    [LinkedDataProperty($"{Constants.NAMESPACE}mediaType")]
     public string? MediaType { get; init; }
 }
 
@@ -84,7 +85,7 @@ public record Object : Entity
     public string? Summary { get; init; }
 
     [LinkedDataProperty($"{Constants.NAMESPACE}to")]
-    public DataList<LinkOr<Object>> To { get; init; }
+    public LinkableList<Object> To { get; init; }
 
     [LinkedDataProperty($"{Constants.NAMESPACE}url")]
     public DataList<LinkTo<Object>> Url { get; init; }
@@ -93,57 +94,69 @@ public record Object : Entity
 public abstract record BaseCollectionPage<TPage>
     where TPage : BaseCollectionPage<TPage>
 {
+    [LinkedDataProperty($"{Constants.NAMESPACE}next")]
     public LinkOr<TPage>? Next { get; init; }
 
+    [LinkedDataProperty($"{Constants.NAMESPACE}partOf")]
     public LinkOr<Collection>? PartOf { get; init; }
 
+    [LinkedDataProperty($"{Constants.NAMESPACE}prev")]
     public LinkOr<TPage>? Prev { get; init; }
 }
 
 public abstract record BaseCollection<TPage> : Object
     where TPage : BaseCollectionPage<TPage>
 {
+    [LinkedDataProperty($"{Constants.NAMESPACE}current")]
     public LinkOr<TPage>? Current { get; init; }
 
+    [LinkedDataProperty($"{Constants.NAMESPACE}first")]
     public LinkOr<TPage>? First { get; init; }
 
+    [LinkedDataProperty($"{Constants.NAMESPACE}last")]
     public LinkOr<TPage>? Last { get; init; }
 
+    [LinkedDataProperty($"{Constants.NAMESPACE}totalItems")]
     public int TotalItems { get; init; }
 }
 
-[LinkedData(Constants.NAMESPACE)]
+[LinkedDataType($"{Constants.NAMESPACE}CollectionPage")]
 public record CollectionPage : BaseCollectionPage<CollectionPage>
 {
+    [LinkedDataProperty($"{Constants.NAMESPACE}items")]
     public DataList<LinkOr<Object>> Items { get; init; }
 }
 
-[LinkedData(Constants.NAMESPACE)]
+[LinkedDataType($"{Constants.NAMESPACE}Collection")]
 public record Collection : BaseCollection<CollectionPage>
 {
+    [LinkedDataProperty($"{Constants.NAMESPACE}items")]
     public DataList<LinkOr<Object>> Items { get; init; }
 }
 
-[LinkedData(Constants.NAMESPACE)]
+[LinkedDataType($"{Constants.NAMESPACE}OrderedCollectionPage")]
 public record OrderedCollectionPage : BaseCollectionPage<OrderedCollectionPage>
 {
-    [JsonPropertyName($"{Constants.NAMESPACE}items")]
-    public DataList<LinkOr<Object>> OrderedItems { get; init; }
+    [LinkedDataProperty($"{Constants.NAMESPACE}items")]
+    public DataList<LinkTo<Object>> OrderedItems { get; init; }
 
+    [LinkedDataProperty($"{Constants.NAMESPACE}startIndex")]
     public int StartIndex { get; init; }
 }
 
-[LinkedData(Constants.NAMESPACE)]
+[LinkedDataType($"{Constants.NAMESPACE}OrderedCollection")]
 public record OrderedCollection : BaseCollection<OrderedCollectionPage>
 {
-    [JsonPropertyName($"{Constants.NAMESPACE}items")]
-    public DataList<LinkOr<Object>> OrderedItems { get; init; }
+    [LinkedDataProperty($"{Constants.NAMESPACE}items")]
+    public DataList<LinkTo<Object>> OrderedItems { get; init; }
 }
 
-[LinkedData(Constants.NAMESPACE)]
+[LinkedDataType($"{Constants.NAMESPACE}Activity")]
 public record Activity : Object
 {
+    [LinkedDataProperty($"{Constants.NAMESPACE}actor")]
     public DataList<LinkTo<Actor>> Actor { get; init; }
 
+    [LinkedDataProperty($"{Constants.NAMESPACE}object")]
     public DataList<LinkTo<Object>> Object { get; init; }
 }

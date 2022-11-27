@@ -1,4 +1,5 @@
 ﻿using DarkLink.Util.JsonLd.Attributes;
+using DarkLink.Util.JsonLd.Types;
 
 namespace DarkLink.Web.ActivityPub.Types.Extended;
 
@@ -30,16 +31,12 @@ public record Document : Object;
 [LinkedDataType($"{Constants.NAMESPACE}Image")]
 public record Image : Document;
 
-[LinkedData(Constants.NAMESPACE)]
-public record TypedActivity(
-    [property: LinkedData("@type")] Uri Type) : Activity;
+public record TypedActivity(DataList<Uri> Type) : Activity;
 
-[LinkedData(Constants.NAMESPACE)]
-public record TypedObject(
-    [property: LinkedData("@type")] Uri Type) : Object;
+public record TypedObject(DataList<Uri> Type) : Object;
 
-[LinkedData(Constants.NAMESPACE)]
+[LinkedDataType($"{Constants.NAMESPACE}Create")]
 public record Create : Activity;
 
-[LinkedData(Constants.NAMESPACE)]
+[LinkedDataType($"{Constants.NAMESPACE}Note")]
 public record Note : Object;

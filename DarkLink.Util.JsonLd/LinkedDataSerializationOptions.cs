@@ -1,5 +1,7 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 using DarkLink.Util.JsonLd.Converters;
+using DarkLink.Util.JsonLd.Converters.Json;
 
 namespace DarkLink.Util.JsonLd;
 
@@ -21,11 +23,24 @@ public class LinkedDataSerializationOptions
         {
             new ObjectConverter(),
             new EnumerableConverter(),
+            new PrimitiveConverter(),
             new StringConverter(),
             new UriConverter(),
         };
         DefaultIgnoreCondition = LinkedDataIgnoreCondition.WhenWritingDefault;
-        JsonSerializerOptions = new JsonSerializerOptions();
+        JsonSerializerOptions = new JsonSerializerOptions
+        {
+            Converters =
+            {
+                LinkedDataConverter2.Instance,
+                LinkOrConverter.Instance,
+                DataListConverter.Instance,
+                LinkedDataListConverter.Instance,
+                ContextEntryConverter.Instance,
+                TermMappingConverter.Instance,
+            },
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
+        };
     }
 
     public LinkedDataSerializationOptions(LinkedDataSerializationOptions copyFrom)
