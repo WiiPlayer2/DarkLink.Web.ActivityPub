@@ -90,9 +90,13 @@ internal class ObjectConverter : ILinkedDataConverter
             if (linkedDataProperty is null)
                 continue; // Ignore for now
 
+            var ignoreCondition = options.DefaultIgnoreCondition;
             var propertyValue = property.GetValue(value);
             var propertyData = LinkedDataSerializer.SerializeToLinkedData(propertyValue, property.PropertyType, options);
-            properties.Add(linkedDataProperty.Iri, propertyData);
+
+            if (ignoreCondition == LinkedDataIgnoreCondition.Never
+                || (ignoreCondition == LinkedDataIgnoreCondition.WhenWritingDefault && !propertyData.IsEmpty))
+                properties.Add(linkedDataProperty.Iri, propertyData);
         }
 
         return data with

@@ -78,8 +78,8 @@ public class LinkToConverter2 : LinkedDataConverterFactory
             if (data is null)
                 return null;
 
-            if (!data.Type.IsEmpty)
-                return data.Type.Value!;
+            if (data.Type.IsEmpty)
+                return data.Id!;
 
             return LinkedDataSerializer.DeserializeFromLinkedData<T>(data, options)!;
         }
