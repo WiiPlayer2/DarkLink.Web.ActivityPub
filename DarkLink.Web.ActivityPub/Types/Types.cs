@@ -59,26 +59,34 @@ public abstract record Entity
     public string? MediaType { get; init; }
 }
 
-[LinkedData(Constants.NAMESPACE)]
+[LinkedDataType($"{Constants.NAMESPACE}Link")]
 public record Link : Entity { }
 
-[LinkedData(Constants.NAMESPACE)]
+[LinkedDataType($"{Constants.NAMESPACE}Object")]
 public record Object : Entity
 {
+    [LinkedDataProperty($"{Constants.NAMESPACE}attachment")]
     public DataList<LinkOr<Object>> Attachment { get; init; }
 
+    [LinkedDataProperty($"{Constants.NAMESPACE}content")]
     public string? Content { get; init; }
 
+    [LinkedDataProperty($"{Constants.NAMESPACE}icon")]
     public DataList<LinkTo<Image>> Icon { get; init; }
 
+    [LinkedDataProperty($"{Constants.NAMESPACE}name")]
     public string? Name { get; init; }
 
+    [LinkedDataProperty($"{Constants.NAMESPACE}published")]
     public DateTimeOffset? Published { get; init; }
 
+    [LinkedDataProperty($"{Constants.NAMESPACE}summary")]
     public string? Summary { get; init; }
 
+    [LinkedDataProperty($"{Constants.NAMESPACE}to")]
     public DataList<LinkOr<Object>> To { get; init; }
 
+    [LinkedDataProperty($"{Constants.NAMESPACE}url")]
     public DataList<LinkTo<Object>> Url { get; init; }
 }
 

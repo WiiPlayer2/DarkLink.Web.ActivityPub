@@ -1,8 +1,8 @@
 ﻿using System.Text.Json;
 using DarkLink.Text.Json.NewtonsoftJsonMapper;
 using DarkLink.Util.JsonLd;
-using DarkLink.Util.JsonLd.Attributes;
 using DarkLink.Web.ActivityPub.Serialization;
+using DarkLink.Web.ActivityPub.Types.Extended;
 using JsonLD.Core;
 using Newtonsoft.Json.Linq;
 
@@ -12,6 +12,13 @@ var jsonOptions = new JsonSerializerOptions
     Converters =
     {
         LinkToConverter.Instance,
+    },
+};
+var linkedDataOptions = new LinkedDataSerializationOptions
+{
+    Converters =
+    {
+        new LinkToConverter2(),
     },
 };
 
@@ -52,8 +59,8 @@ var ld = LinkedDataSerializer.DeserializeLinkedData(compact, jsonOptions)!;
 //Console.WriteLine(compactLdNode);
 //Console.WriteLine(LINE);
 
-var myPerson = LinkedDataSerializer.DeserializeFromLinkedData<MyPerson>(ld);
-var myLinkedData = LinkedDataSerializer.SerializeToLinkedData(myPerson);
+var myPerson = LinkedDataSerializer.DeserializeFromLinkedData<Person>(ld, linkedDataOptions);
+var myLinkedData = LinkedDataSerializer.SerializeToLinkedData(myPerson, options: linkedDataOptions);
 var myNode = LinkedDataSerializer.SerializeLinkedData(myLinkedData);
 
 Console.WriteLine(myNode);
@@ -61,30 +68,30 @@ Console.WriteLine(LINE);
 
 Console.WriteLine("done.");
 
-[LinkedDataType("https://www.w3.org/ns/activitystreams#Person")]
-internal record MyPerson
-{
-    [LinkedDataProperty("https://www.w3.org/ns/activitystreams#icon")]
-    public IReadOnlyList<MyImage>? Icon { get; init; }
+//[LinkedDataType("https://www.w3.org/ns/activitystreams#Person")]
+//internal record MyPerson
+//{
+//    [LinkedDataProperty("https://www.w3.org/ns/activitystreams#icon")]
+//    public IReadOnlyList<MyImage>? Icon { get; init; }
 
-    public Uri? Id { get; init; }
+//    public Uri? Id { get; init; }
 
-    [LinkedDataProperty("https://www.w3.org/ns/activitystreams#image")]
-    public IReadOnlyList<MyImage>? Image { get; init; }
+//    [LinkedDataProperty("https://www.w3.org/ns/activitystreams#image")]
+//    public IReadOnlyList<MyImage>? Image { get; init; }
 
-    [LinkedDataProperty("https://www.w3.org/ns/activitystreams#name")]
-    public string? Name { get; init; }
+//    [LinkedDataProperty("https://www.w3.org/ns/activitystreams#name")]
+//    public string? Name { get; init; }
 
-    [LinkedDataProperty("https://www.w3.org/ns/activitystreams#preferredUsername")]
-    public string? PreferredUsername { get; init; }
-}
+//    [LinkedDataProperty("https://www.w3.org/ns/activitystreams#preferredUsername")]
+//    public string? PreferredUsername { get; init; }
+//}
 
-[LinkedDataType("https://www.w3.org/ns/activitystreams#Person")]
-internal record MyImage
-{
-    [LinkedDataProperty("https://www.w3.org/ns/activitystreams#mediaType")]
-    public string? MediaType { get; init; }
+//[LinkedDataType("https://www.w3.org/ns/activitystreams#Person")]
+//internal record MyImage
+//{
+//    [LinkedDataProperty("https://www.w3.org/ns/activitystreams#mediaType")]
+//    public string? MediaType { get; init; }
 
-    [LinkedDataProperty("https://www.w3.org/ns/activitystreams#url")]
-    public Uri? Url { get; init; }
-}
+//    [LinkedDataProperty("https://www.w3.org/ns/activitystreams#url")]
+//    public Uri? Url { get; init; }
+//}

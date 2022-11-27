@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Runtime.Serialization;
 using DarkLink.Util.JsonLd.Attributes;
 using DarkLink.Util.JsonLd.Types;
 
@@ -13,7 +14,7 @@ internal class ObjectConverter : ILinkedDataConverter
         var data = dataList.Value;
         if (data is null) return null;
 
-        var obj = Activator.CreateInstance(typeToConvert)!;
+        var obj = CreateObject()!;
         foreach (var property in typeToConvert.GetProperties())
         {
             if (property.Name.Equals("id", StringComparison.InvariantCultureIgnoreCase))
@@ -28,13 +29,29 @@ internal class ObjectConverter : ILinkedDataConverter
                 continue;
             }
 
-            var linkedDataProperty = property.GetCustomAttribute<LinkedDataPropertyAttribute>() ?? throw new InvalidOperationException();
+            var linkedDataProperty = property.GetCustomAttribute<LinkedDataPropertyAttribute>();
+            if (linkedDataProperty is null)
+                continue; // Ignore for now
+
             var propertyData = data[linkedDataProperty.Iri];
             var convertedValue = LinkedDataSerializer.DeserializeFromLinkedData(DataList.FromItems(propertyData), property.PropertyType, options);
             property.SetValue(obj, convertedValue);
         }
 
         return obj;
+
+        // TODO big hack, should be done by invoking parameterized constructor
+        object CreateObject()
+        {
+            try
+            {
+                return Activator.CreateInstance(typeToConvert)!;
+            }
+            catch
+            {
+                return FormatterServices.GetUninitializedObject(typeToConvert);
+            }
+        }
     }
 
     public DataList<LinkedData> ConvertBack(object? value, Type typeToConvert, LinkedDataSerializationOptions options)
@@ -69,7 +86,10 @@ internal class ObjectConverter : ILinkedDataConverter
                 continue;
             }
 
-            var linkedDataProperty = property.GetCustomAttribute<LinkedDataPropertyAttribute>() ?? throw new InvalidOperationException();
+            var linkedDataProperty = property.GetCustomAttribute<LinkedDataPropertyAttribute>();
+            if (linkedDataProperty is null)
+                continue; // Ignore for now
+
             var propertyValue = property.GetValue(value);
             var propertyData = LinkedDataSerializer.SerializeToLinkedData(propertyValue, property.PropertyType, options);
             properties.Add(linkedDataProperty.Iri, propertyData);

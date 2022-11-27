@@ -30,7 +30,7 @@ internal class EnumerableConverter : LinkedDataConverterFactory
 
         protected override TEnumerable? Convert(DataList<LinkedData> dataList, LinkedDataSerializationOptions options)
         {
-            var sequence = dataList.Select(data => LinkedDataSerializer.DeserializeFromLinkedData<TItem>(data) ?? throw new InvalidOperationException());
+            var sequence = dataList.Select(data => LinkedDataSerializer.DeserializeFromLinkedData<TItem>(data, options) ?? throw new InvalidOperationException());
             var enumerable = create(sequence);
             return enumerable;
         }
@@ -51,6 +51,9 @@ internal class EnumerableConverter : LinkedDataConverterFactory
         {
             if (typeof(TEnumerable) == typeof(IReadOnlyList<TItem>))
                 return sequence => (TEnumerable) (object) new List<TItem>(sequence);
+
+            if (typeof(TEnumerable) == typeof(DataList<TItem>))
+                return sequence => (TEnumerable) (object) DataList.FromItems(sequence);
 
             throw new NotImplementedException();
         }

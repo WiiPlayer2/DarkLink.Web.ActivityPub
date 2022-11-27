@@ -1,29 +1,33 @@
-﻿using System.Text.Json.Serialization;
-using DarkLink.Util.JsonLd.Attributes;
+﻿using DarkLink.Util.JsonLd.Attributes;
 
 namespace DarkLink.Web.ActivityPub.Types.Extended;
 
 public abstract record Actor(
-    [property: JsonPropertyName("http://www.w3.org/ns/ldp#inbox")]
+    [property: LinkedDataProperty("http://www.w3.org/ns/ldp#inbox")]
     Uri Inbox,
+    [property: LinkedDataProperty($"{Constants.NAMESPACE}outbox")]
     Uri Outbox) : Object
 {
+    [LinkedDataProperty($"{Constants.NAMESPACE}followers")]
     public Uri? Followers { get; init; }
 
+    [LinkedDataProperty($"{Constants.NAMESPACE}following")]
     public Uri? Following { get; init; }
 
+    [LinkedDataProperty($"{Constants.NAMESPACE}liked")]
     public Uri? Liked { get; init; }
 
+    [LinkedDataProperty($"{Constants.NAMESPACE}preferredUsername")]
     public string? PreferredUsername { get; init; }
 }
 
-[LinkedData(Constants.NAMESPACE)]
+[LinkedDataType($"{Constants.NAMESPACE}Person")]
 public record Person(Uri Inbox, Uri Outbox) : Actor(Inbox, Outbox);
 
-[LinkedData(Constants.NAMESPACE)]
+[LinkedDataType($"{Constants.NAMESPACE}Document")]
 public record Document : Object;
 
-[LinkedData(Constants.NAMESPACE)]
+[LinkedDataType($"{Constants.NAMESPACE}Image")]
 public record Image : Document;
 
 [LinkedData(Constants.NAMESPACE)]
