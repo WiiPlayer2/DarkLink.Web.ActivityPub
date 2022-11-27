@@ -52,8 +52,8 @@ var ld = LinkedDataSerializer.DeserializeLinkedData(compact, jsonOptions)!;
 //Console.WriteLine(compactLdNode);
 //Console.WriteLine(LINE);
 
-var myPerson = LinkedDataSerializer.Deserialize2<MyPerson>(ld);
-var myLinkedData = LinkedDataSerializer.Serialize2(myPerson);
+var myPerson = LinkedDataSerializer.DeserializeFromLinkedData<MyPerson>(ld);
+var myLinkedData = LinkedDataSerializer.SerializeToLinkedData(myPerson);
 var myNode = LinkedDataSerializer.SerializeLinkedData(myLinkedData);
 
 Console.WriteLine(myNode);
