@@ -67,13 +67,13 @@ public record Link : Entity { }
 public record Object : Entity
 {
     [LinkedDataProperty($"{Constants.NAMESPACE}attachment")]
-    public DataList<LinkOr<Object>> Attachment { get; init; }
+    public LinkableList<Object> Attachment { get; init; }
 
     [LinkedDataProperty($"{Constants.NAMESPACE}content")]
     public string? Content { get; init; }
 
     [LinkedDataProperty($"{Constants.NAMESPACE}icon")]
-    public DataList<LinkTo<Image>> Icon { get; init; }
+    public LinkableList<Image> Icon { get; init; }
 
     [LinkedDataProperty($"{Constants.NAMESPACE}name")]
     public string? Name { get; init; }
@@ -88,7 +88,7 @@ public record Object : Entity
     public LinkableList<Object> To { get; init; }
 
     [LinkedDataProperty($"{Constants.NAMESPACE}url")]
-    public DataList<LinkTo<Object>> Url { get; init; }
+    public LinkableList<Object> Url { get; init; }
 }
 
 public abstract record BaseCollectionPage<TPage>
@@ -124,21 +124,21 @@ public abstract record BaseCollection<TPage> : Object
 public record CollectionPage : BaseCollectionPage<CollectionPage>
 {
     [LinkedDataProperty($"{Constants.NAMESPACE}items")]
-    public DataList<LinkOr<Object>> Items { get; init; }
+    public LinkableList<Object> Items { get; init; }
 }
 
 [LinkedDataType($"{Constants.NAMESPACE}Collection")]
 public record Collection : BaseCollection<CollectionPage>
 {
     [LinkedDataProperty($"{Constants.NAMESPACE}items")]
-    public DataList<LinkOr<Object>> Items { get; init; }
+    public LinkableList<Object> Items { get; init; }
 }
 
 [LinkedDataType($"{Constants.NAMESPACE}OrderedCollectionPage")]
 public record OrderedCollectionPage : BaseCollectionPage<OrderedCollectionPage>
 {
     [LinkedDataProperty($"{Constants.NAMESPACE}items")]
-    public DataList<LinkTo<Object>> OrderedItems { get; init; }
+    public LinkableList<Object> OrderedItems { get; init; }
 
     [LinkedDataProperty($"{Constants.NAMESPACE}startIndex")]
     public int StartIndex { get; init; }
@@ -148,15 +148,15 @@ public record OrderedCollectionPage : BaseCollectionPage<OrderedCollectionPage>
 public record OrderedCollection : BaseCollection<OrderedCollectionPage>
 {
     [LinkedDataProperty($"{Constants.NAMESPACE}items")]
-    public DataList<LinkTo<Object>> OrderedItems { get; init; }
+    public LinkableList<Object> OrderedItems { get; init; }
 }
 
 [LinkedDataType($"{Constants.NAMESPACE}Activity")]
 public record Activity : Object
 {
     [LinkedDataProperty($"{Constants.NAMESPACE}actor")]
-    public DataList<LinkTo<Actor>> Actor { get; init; }
+    public LinkableList<Actor> Actor { get; init; }
 
     [LinkedDataProperty($"{Constants.NAMESPACE}object")]
-    public DataList<LinkTo<Object>> Object { get; init; }
+    public LinkableList<Object> Object { get; init; }
 }
