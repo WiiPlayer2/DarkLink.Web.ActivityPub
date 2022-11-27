@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Text.Json.Nodes;
 using DarkLink.Util.JsonLd.Attributes;
 using DarkLink.Util.JsonLd.Types;
 
@@ -10,7 +11,7 @@ public interface ILinkedDataConverter
 
     object? Convert(DataList<LinkedData> dataList, Type typeToConvert, LinkedDataSerializationOptions options);
 
-    DataList<LinkedData> ConvertBack(object? value, LinkedDataSerializationOptions options);
+    DataList<LinkedData> ConvertBack(object? value, Type typeToConvert, LinkedDataSerializationOptions options);
 }
 
 internal class ObjectConverter : ILinkedDataConverter
@@ -46,7 +47,49 @@ internal class ObjectConverter : ILinkedDataConverter
         return obj;
     }
 
-    public DataList<LinkedData> ConvertBack(object? value, LinkedDataSerializationOptions options) => throw new NotImplementedException();
+    public DataList<LinkedData> ConvertBack(object? value, Type typeToConvert, LinkedDataSerializationOptions options)
+    {
+        var valueType = value?.GetType() ?? typeToConvert;
+        if (value is null)
+            return default;
+
+        var data = new LinkedData
+        {
+            Type = DataList.FromItems(valueType.GetCustomAttributes<LinkedDataTypeAttribute>()
+                .Select(attr => attr.Type)),
+        };
+        var properties = new Dictionary<Uri, DataList<LinkedData>>(UriEqualityComparer.Default);
+        foreach (var property in valueType.GetProperties())
+        {
+            if (property.Name.Equals("id", StringComparison.InvariantCultureIgnoreCase))
+            {
+                data = data with
+                {
+                    Id = (Uri?) property.GetValue(value),
+                };
+                continue;
+            }
+
+            if (property.Name.Equals("type", StringComparison.CurrentCultureIgnoreCase))
+            {
+                data = data with
+                {
+                    Type = (DataList<Uri>) property.GetValue(value)!,
+                };
+                continue;
+            }
+
+            var linkedDataProperty = property.GetCustomAttribute<LinkedDataPropertyAttribute>() ?? throw new InvalidOperationException();
+            var propertyValue = property.GetValue(value);
+            var propertyData = LinkedDataSerializer.Serialize2(propertyValue, property.PropertyType, options);
+            properties.Add(linkedDataProperty.Iri, propertyData);
+        }
+
+        return data with
+        {
+            Properties = properties,
+        };
+    }
 }
 
 public abstract class LinkedDataConverter<T> : ILinkedDataConverter
@@ -56,7 +99,7 @@ public abstract class LinkedDataConverter<T> : ILinkedDataConverter
 
     public object? Convert(DataList<LinkedData> dataList, Type typeToConvert, LinkedDataSerializationOptions options) => Convert(dataList, options);
 
-    public DataList<LinkedData> ConvertBack(object? value, LinkedDataSerializationOptions options) => ConvertBack((T) value!, options);
+    public DataList<LinkedData> ConvertBack(object? value, Type typeToConvert, LinkedDataSerializationOptions options) => ConvertBack((T) value!, options);
 
     protected abstract T? Convert(DataList<LinkedData> dataList, LinkedDataSerializationOptions options);
 
@@ -70,8 +113,8 @@ public abstract class LinkedDataConverterFactory : ILinkedDataConverter
     public object? Convert(DataList<LinkedData> dataList, Type typeToConvert, LinkedDataSerializationOptions options)
         => CreateConverter(typeToConvert, options)?.Convert(dataList, typeToConvert, options);
 
-    public DataList<LinkedData> ConvertBack(object? value, LinkedDataSerializationOptions options)
-        => CreateConverter(value?.GetType() ?? typeof(object), options)?.ConvertBack(value, options) ?? default;
+    public DataList<LinkedData> ConvertBack(object? value, Type typeToConvert, LinkedDataSerializationOptions options)
+        => CreateConverter(typeToConvert, options)?.ConvertBack(value, typeToConvert, options) ?? default;
 
     protected abstract ILinkedDataConverter? CreateConverter(Type typeToConvert, LinkedDataSerializationOptions options);
 }
@@ -81,14 +124,22 @@ internal class StringConverter : LinkedDataConverter<string>
     protected override string? Convert(DataList<LinkedData> dataList, LinkedDataSerializationOptions options)
         => dataList.Value?.Value?.GetValue<string>();
 
-    protected override DataList<LinkedData> ConvertBack(string? value, LinkedDataSerializationOptions options) => throw new NotImplementedException();
+    protected override DataList<LinkedData> ConvertBack(string? value, LinkedDataSerializationOptions options)
+        => value is null
+            ? default
+            : new LinkedData
+            {
+                Value = JsonValue.Create(value),
+            };
 }
 
 internal class UriConverter : LinkedDataConverter<Uri>
 {
-    protected override Uri? Convert(DataList<LinkedData> dataList, LinkedDataSerializationOptions options) => dataList.Value?.Id;
+    protected override Uri? Convert(DataList<LinkedData> dataList, LinkedDataSerializationOptions options)
+        => dataList.Value?.Id;
 
-    protected override DataList<LinkedData> ConvertBack(Uri? value, LinkedDataSerializationOptions options) => throw new NotImplementedException();
+    protected override DataList<LinkedData> ConvertBack(Uri? value, LinkedDataSerializationOptions options)
+        => value is null ? default : new LinkedData {Id = value};
 }
 
 internal class EnumerableConverter : LinkedDataConverterFactory
@@ -124,7 +175,13 @@ internal class EnumerableConverter : LinkedDataConverterFactory
             return enumerable;
         }
 
-        protected override DataList<LinkedData> ConvertBack(TEnumerable? value, LinkedDataSerializationOptions options) => throw new NotImplementedException();
+        protected override DataList<LinkedData> ConvertBack(TEnumerable? value, LinkedDataSerializationOptions options)
+        {
+            var list = (value ?? Enumerable.Empty<TItem>())
+                .Select(item => LinkedDataSerializer.Serialize2(item, typeof(TItem), options).Value!)
+                .ToList();
+            return DataList.FromItems(list);
+        }
     }
 
     private static class Map<TItem>

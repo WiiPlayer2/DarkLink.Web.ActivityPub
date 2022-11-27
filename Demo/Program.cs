@@ -2,7 +2,6 @@
 using DarkLink.Text.Json.NewtonsoftJsonMapper;
 using DarkLink.Util.JsonLd;
 using DarkLink.Util.JsonLd.Attributes;
-using DarkLink.Util.JsonLd.Types;
 using DarkLink.Web.ActivityPub.Serialization;
 using JsonLD.Core;
 using Newtonsoft.Json.Linq;
@@ -54,6 +53,11 @@ var ld = LinkedDataSerializer.DeserializeLinkedData(compact, jsonOptions)!;
 //Console.WriteLine(LINE);
 
 var myPerson = LinkedDataSerializer.Deserialize2<MyPerson>(ld);
+var myLinkedData = LinkedDataSerializer.Serialize2(myPerson);
+var myNode = LinkedDataSerializer.SerializeLinkedData(myLinkedData);
+
+Console.WriteLine(myNode);
+Console.WriteLine(LINE);
 
 Console.WriteLine("done.");
 
@@ -73,8 +77,6 @@ internal record MyPerson
 
     [LinkedDataProperty("https://www.w3.org/ns/activitystreams#preferredUsername")]
     public string? PreferredUsername { get; init; }
-
-    public DataList<Uri> Type { get; init; }
 }
 
 [LinkedDataType("https://www.w3.org/ns/activitystreams#Person")]
@@ -82,8 +84,6 @@ internal record MyImage
 {
     [LinkedDataProperty("https://www.w3.org/ns/activitystreams#mediaType")]
     public string? MediaType { get; init; }
-
-    public DataList<Uri> Type { get; init; }
 
     [LinkedDataProperty("https://www.w3.org/ns/activitystreams#url")]
     public Uri? Url { get; init; }

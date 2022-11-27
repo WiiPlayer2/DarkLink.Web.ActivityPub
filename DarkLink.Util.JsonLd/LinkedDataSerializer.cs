@@ -77,16 +77,16 @@ public class LinkedDataConverter2 : JsonConverter<LinkedData>
 
         JsonSerializer.Serialize(writer, obj, options);
     }
+}
 
-    private class UriEqualityComparer : EqualityComparer<Uri>
-    {
-        public new static UriEqualityComparer Default { get; } = new();
+internal class UriEqualityComparer : EqualityComparer<Uri>
+{
+    public new static UriEqualityComparer Default { get; } = new();
 
-        public override bool Equals(Uri? x, Uri? y)
-            => object.Equals(x, y) && Equals(x?.Fragment, y?.Fragment);
+    public override bool Equals(Uri? x, Uri? y)
+        => object.Equals(x, y) && Equals(x?.Fragment, y?.Fragment);
 
-        public override int GetHashCode(Uri obj) => obj.GetHashCode() ^ obj.Fragment.GetHashCode();
-    }
+    public override int GetHashCode(Uri obj) => obj.GetHashCode() ^ obj.Fragment.GetHashCode();
 }
 
 public class LinkedDataSerializationOptions
@@ -134,7 +134,7 @@ public static class LinkedDataSerializer
     public static T? Deserialize2<T>(DataList<LinkedData> data, LinkedDataSerializationOptions? options = default)
         => (T?) Deserialize2(data, typeof(T), options);
 
-    public static LinkedData? DeserializeLinkedData(JsonNode node, JsonSerializerOptions? options = default)
+    public static DataList<LinkedData> DeserializeLinkedData(JsonNode node, JsonSerializerOptions? options = default)
     {
         options = Prepare2(options);
 
@@ -191,13 +191,23 @@ public static class LinkedDataSerializer
         return node;
     }
 
+    public static DataList<LinkedData> Serialize2(object? value, Type? targetType = default, LinkedDataSerializationOptions? options = default)
+    {
+        options ??= new LinkedDataSerializationOptions();
+
+        targetType ??= value?.GetType() ?? typeof(object);
+        var converter = options.Converters.LastOrDefault(c => c.CanConvert(targetType)) ?? throw new InvalidOperationException($"Unable to serialize type {targetType.AssemblyQualifiedName}.");
+        var result = converter.ConvertBack(value, targetType, options);
+        return result;
+    }
+
     public static JsonNode? SerializeContext(LinkedDataList<ContextEntry> context, JsonSerializerOptions? options = default)
     {
         options = Prepare2(options);
         return JsonSerializer.SerializeToNode(context, options);
     }
 
-    public static JsonNode SerializeLinkedData(LinkedData linkedData, JsonSerializerOptions? options = default)
+    public static JsonNode SerializeLinkedData(DataList<LinkedData> linkedData, JsonSerializerOptions? options = default)
     {
         options = Prepare2(options);
 
