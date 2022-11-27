@@ -65,7 +65,7 @@ internal class ObjectConverter : ILinkedDataConverter
             Type = DataList.FromItems(valueType.GetCustomAttributes<LinkedDataTypeAttribute>()
                 .Select(attr => attr.Type)),
         };
-        var properties = new Dictionary<Uri, DataList<LinkedData>>(UriEqualityComparer.Default);
+        var properties = new Dictionary<Uri, DataList<LinkedData>>(FullUriEqualityComparer.Default);
         foreach (var property in valueType.GetProperties())
         {
             if (property.Name.Equals("id", StringComparison.InvariantCultureIgnoreCase))

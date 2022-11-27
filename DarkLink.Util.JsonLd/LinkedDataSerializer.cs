@@ -20,6 +20,15 @@ public static class LinkedDataSerializer
     {
         options ??= new LinkedDataSerializationOptions();
 
+        foreach (var typeResolver in options.TypeResolvers.AsEnumerable().Reverse())
+        {
+            if (!typeResolver.TryResolve(targetType, data, out var newTargetType))
+                continue;
+
+            targetType = newTargetType;
+            break;
+        }
+
         var converter = options.Converters.LastOrDefault(c => c.CanConvert(targetType)) ?? throw new InvalidOperationException($"Unable to deserialize type {targetType.AssemblyQualifiedName}.");
         var result = converter.Convert(data, targetType, options);
         return result;

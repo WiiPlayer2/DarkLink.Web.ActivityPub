@@ -38,5 +38,11 @@ public record TypedObject(DataList<Uri> Type) : Object;
 [LinkedDataType($"{Constants.NAMESPACE}Create")]
 public record Create : Activity;
 
+[LinkedDataType($"{Constants.NAMESPACE}Undo")]
+public record Undo : Activity;
+
+[LinkedDataType($"{Constants.NAMESPACE}Follow")]
+public record Follow : Activity;
+
 [LinkedDataType($"{Constants.NAMESPACE}Note")]
 public record Note : Object;

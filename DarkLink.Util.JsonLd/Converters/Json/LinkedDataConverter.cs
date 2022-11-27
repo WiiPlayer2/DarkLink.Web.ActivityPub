@@ -34,7 +34,7 @@ public class LinkedDataConverter : JsonConverter<LinkedData>
             .Select(kv => (new Uri(kv.Key), kv.Value.Deserialize<IReadOnlyList<LinkedData>>(options)!)) // if null then data is illegal
             .ToList();
         var properties = keyValuePairs
-            .ToDictionary(pair => pair.Item1, pair => DataList.FromItems(pair.Item2), UriEqualityComparer.Default);
+            .ToDictionary(pair => pair.Item1, pair => DataList.FromItems(pair.Item2), FullUriEqualityComparer.Default);
 
         var linkedData = new LinkedData
         {

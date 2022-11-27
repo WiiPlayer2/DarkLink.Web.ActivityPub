@@ -5,16 +5,6 @@ using DarkLink.Util.JsonLd.Converters.Json;
 
 namespace DarkLink.Util.JsonLd;
 
-public enum LinkedDataIgnoreCondition
-{
-    Never,
-
-    Always,
-
-    //WhenWritingNull, // TODO I don't think this makes sense for now
-    WhenWritingDefault,
-}
-
 public class LinkedDataSerializationOptions
 {
     public LinkedDataSerializationOptions()
@@ -26,6 +16,10 @@ public class LinkedDataSerializationOptions
             new PrimitiveConverter(),
             new StringConverter(),
             new UriConverter(),
+        };
+        TypeResolvers = new List<ILinkedDataTypeResolver>
+        {
+            new FallbackTypeResolver(),
         };
         DefaultIgnoreCondition = LinkedDataIgnoreCondition.WhenWritingDefault;
         JsonSerializerOptions = new JsonSerializerOptions
@@ -46,6 +40,7 @@ public class LinkedDataSerializationOptions
     public LinkedDataSerializationOptions(LinkedDataSerializationOptions copyFrom)
     {
         Converters = new List<ILinkedDataConverter>(copyFrom.Converters);
+        TypeResolvers = new List<ILinkedDataTypeResolver>(copyFrom.TypeResolvers);
         DefaultIgnoreCondition = copyFrom.DefaultIgnoreCondition;
         JsonSerializerOptions = new JsonSerializerOptions(copyFrom.JsonSerializerOptions);
     }
@@ -55,4 +50,6 @@ public class LinkedDataSerializationOptions
     public LinkedDataIgnoreCondition DefaultIgnoreCondition { get; set; }
 
     public JsonSerializerOptions JsonSerializerOptions { get; }
+
+    public List<ILinkedDataTypeResolver> TypeResolvers { get; }
 }

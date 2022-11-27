@@ -29,6 +29,10 @@ var linkedDataOptions = new LinkedDataSerializationOptions
         new LinkToConverter(),
         new LinkableListConverter(),
     },
+    TypeResolvers =
+    {
+        new ActivityPubTypeResolver(),
+    },
     JsonSerializerOptions =
     {
         Converters =
@@ -113,7 +117,7 @@ app.MapPost("/profiles/{username}/inbox", async ctx =>
 
     if (!CheckRequest(ctx, out var username)) return;
 
-    var data = await ctx.Request.ReadLinkedData<TypedActivity>(linkedDataOptions);
+    var data = await ctx.Request.ReadLinkedData<Activity>(linkedDataOptions);
 });
 
 app.MapGet("/notes/{username}/{note}", async ctx =>
