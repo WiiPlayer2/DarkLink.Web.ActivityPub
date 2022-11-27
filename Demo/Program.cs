@@ -67,31 +67,3 @@ Console.WriteLine(myNode);
 Console.WriteLine(LINE);
 
 Console.WriteLine("done.");
-
-//[LinkedDataType("https://www.w3.org/ns/activitystreams#Person")]
-//internal record MyPerson
-//{
-//    [LinkedDataProperty("https://www.w3.org/ns/activitystreams#icon")]
-//    public IReadOnlyList<MyImage>? Icon { get; init; }
-
-//    public Uri? Id { get; init; }
-
-//    [LinkedDataProperty("https://www.w3.org/ns/activitystreams#image")]
-//    public IReadOnlyList<MyImage>? Image { get; init; }
-
-//    [LinkedDataProperty("https://www.w3.org/ns/activitystreams#name")]
-//    public string? Name { get; init; }
-
-//    [LinkedDataProperty("https://www.w3.org/ns/activitystreams#preferredUsername")]
-//    public string? PreferredUsername { get; init; }
-//}
-
-//[LinkedDataType("https://www.w3.org/ns/activitystreams#Person")]
-//internal record MyImage
-//{
-//    [LinkedDataProperty("https://www.w3.org/ns/activitystreams#mediaType")]
-//    public string? MediaType { get; init; }
-
-//    [LinkedDataProperty("https://www.w3.org/ns/activitystreams#url")]
-//    public Uri? Url { get; init; }
-//}
