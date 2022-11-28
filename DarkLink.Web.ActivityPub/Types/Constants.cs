@@ -4,6 +4,8 @@ namespace DarkLink.Web.ActivityPub.Types;
 
 public static class Constants
 {
+    public const string MEDIA_TYPE = "application/activity+json";
+
     public const string NAMESPACE = "https://www.w3.org/ns/activitystreams#";
 
     public static readonly LinkedDataList<ContextEntry> Context = DataList.FromItems(new LinkOr<ContextEntry>[]

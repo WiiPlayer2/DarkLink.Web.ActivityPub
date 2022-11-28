@@ -33,13 +33,6 @@ var linkedDataOptions = new LinkedDataSerializationOptions
     {
         new ActivityPubTypeResolver(),
     },
-    JsonSerializerOptions =
-    {
-        Converters =
-        {
-            //LinkToConverter.Instance,
-        },
-    },
 };
 
 app.MapGet("/profiles/{username}", (string username) => $"Welcome to the profile of [{username}].");
@@ -63,9 +56,6 @@ app.MapGet("/profiles/{username}.json", async ctx =>
         return;
     }
 
-    ctx.Response.Headers.CacheControl = "max-age=0, private, must-revalidate";
-    ctx.Response.Headers.ContentType = "application/activity+json; charset=utf-8";
-
     var person = new Person(
         new Uri($"{ctx.Request.Scheme}://{ctx.Request.Host}/profiles/{username}/inbox"),
         new Uri($"{ctx.Request.Scheme}://{ctx.Request.Host}/profiles/{username}/outbox"))
@@ -82,9 +72,7 @@ app.MapGet("/profiles/{username}.json", async ctx =>
         }),
     };
 
-    var node = LinkedDataSerializer.Serialize(person, Constants.Context, linkedDataOptions);
-
-    await ctx.Response.WriteAsync(node?.ToString() ?? string.Empty, ctx.RequestAborted);
+    await ctx.Response.WriteLinkedData(person, Constants.Context, linkedDataOptions, ctx.RequestAborted);
 });
 
 app.MapGet("/profiles/{username}/outbox", async ctx =>
@@ -105,10 +93,7 @@ app.MapGet("/profiles/{username}/outbox", async ctx =>
         OrderedItems = DataList.FromItems(activities.Select(a => (LinkTo<Object>) a!)),
     };
 
-    var node = LinkedDataSerializer.Serialize(outboxCollection, Constants.Context, linkedDataOptions);
-
-    ctx.Response.Headers.ContentType = "application/activity+json; charset=utf-8";
-    await ctx.Response.WriteAsync(node?.ToString() ?? string.Empty, ctx.RequestAborted);
+    await ctx.Response.WriteLinkedData(outboxCollection, Constants.Context, linkedDataOptions, ctx.RequestAborted);
 });
 
 app.MapPost("/profiles/{username}/inbox", async ctx =>
@@ -129,10 +114,8 @@ app.MapGet("/notes/{username}/{note}", async ctx =>
         || noteFileRaw is not string noteFile) return;
 
     var note = await GetNoteAsync(ctx.Request.Scheme, ctx.Request.Host.ToString(), username, noteFile, ctx.RequestAborted);
-    var node = LinkedDataSerializer.Serialize(note, Constants.Context, linkedDataOptions);
 
-    ctx.Response.Headers.ContentType = "application/activity+json; charset=utf-8";
-    await ctx.Response.WriteAsync(node?.ToString() ?? string.Empty, ctx.RequestAborted);
+    await ctx.Response.WriteLinkedData(note, Constants.Context, linkedDataOptions, ctx.RequestAborted);
 });
 
 app.MapGet("/notes/{username}/{note}/activity", async ctx =>
@@ -144,10 +127,8 @@ app.MapGet("/notes/{username}/{note}/activity", async ctx =>
         || noteFileRaw is not string noteFile) return;
 
     var activity = await GetNoteActivityAsync(ctx.Request.Scheme, ctx.Request.Host.ToString(), username, noteFile, ctx.RequestAborted);
-    var node = LinkedDataSerializer.Serialize(activity, Constants.Context, linkedDataOptions);
 
-    ctx.Response.Headers.ContentType = "application/activity+json; charset=utf-8";
-    await ctx.Response.WriteAsync(node?.ToString() ?? string.Empty, ctx.RequestAborted);
+    await ctx.Response.WriteLinkedData(activity, Constants.Context, linkedDataOptions, ctx.RequestAborted);
 });
 
 app.MapMethods(
