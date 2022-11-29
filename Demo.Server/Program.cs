@@ -8,6 +8,7 @@ using DarkLink.Web.ActivityPub.Types;
 using DarkLink.Web.ActivityPub.Types.Extended;
 using DarkLink.Web.WebFinger.Server;
 using Demo.Server;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Options;
@@ -20,9 +21,17 @@ builder.Services.AddWebFinger<ResourceDescriptorProvider>();
 builder.Services.Configure<ForwardedHeadersOptions>(options => { options.ForwardedHeaders = ForwardedHeaders.All; });
 builder.Services.AddOptions<Config>().BindConfiguration(Config.KEY);
 
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = "Basic";
+    options.AddScheme<BasicAuthenticationHandler>("Basic", "Basic");
+});
+builder.Services.AddAuthorization(options => options.DefaultPolicy = new AuthorizationPolicyBuilder("Basic").RequireAuthenticatedUser().Build());
+
 var app = builder.Build();
 app.UseForwardedHeaders();
 //app.UseAuthentication();
+app.UseAuthorization();
 app.UseWebFinger();
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
 var config = app.Services.GetRequiredService<IOptions<Config>>().Value;
@@ -164,6 +173,12 @@ app.MapPost("/inbox", async ctx =>
             break;
     }
 });
+
+app.MapPost("/outbox", async ctx =>
+    {
+        throw new NotImplementedException();
+    })
+    .RequireAuthorization();
 
 app.MapMethods(
     "/{*path}",
