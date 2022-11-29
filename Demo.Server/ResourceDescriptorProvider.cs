@@ -1,43 +1,36 @@
 ﻿using System.Collections.Immutable;
 using DarkLink.Web.WebFinger.Server;
 using DarkLink.Web.WebFinger.Shared;
+using Microsoft.Extensions.Options;
+using APConstants = DarkLink.Web.ActivityPub.Types.Constants;
+
+namespace Demo.Server;
 
 internal class ResourceDescriptorProvider : IResourceDescriptorProvider
 {
-    public async Task<JsonResourceDescriptor?> GetResourceDescriptorAsync(Uri resource, IReadOnlyList<string> relations, HttpRequest request, CancellationToken cancellationToken)
+    private readonly string username;
+
+    public ResourceDescriptorProvider(IOptions<Config> config)
     {
-        if (resource.Scheme is not "acct")
-            return default;
+        username = config.Value.Username;
+    }
 
-        if (!resource.LocalPath.EndsWith($"@{request.Host}"))
-            return default;
-
-        var username = resource.LocalPath[..^(request.Host.ToString().Length + 1)];
-
-        if (!Directory.Exists("./data"))
-            Directory.CreateDirectory("./data");
-
-        if (!Directory.Exists($"./data/{username}"))
-        {
-            Directory.CreateDirectory($"./data/{username}");
-            await File.WriteAllTextAsync($"./data/{username}/intro.txt", $"🧪 Just testing here. [{username}] 🧪", CancellationToken.None);
-        }
+    public Task<JsonResourceDescriptor?> GetResourceDescriptorAsync(Uri resource, IReadOnlyList<string> relations, HttpRequest request, CancellationToken cancellationToken)
+    {
+        var userUri = new Uri($"acct:{username}@{request.Host}");
+        if (!resource.Equals(userUri))
+            return Task.FromResult(default(JsonResourceDescriptor));
 
         var descriptor = JsonResourceDescriptor.Empty with
         {
             Subject = resource,
             Links = ImmutableList.Create(
-                Link.Create(Constants.RELATION_PROFILE_PAGE) with
-                {
-                    Type = "text/html",
-                    Href = new Uri($"{request.Scheme}://{request.Host}/profiles/{username}"),
-                },
                 Link.Create("self") with
                 {
-                    Type = "application/activity+json",
-                    Href = new Uri($"{request.Scheme}://{request.Host}/profiles/{username}.json"),
+                    Type = APConstants.MEDIA_TYPE,
+                    Href = new Uri($"{request.Scheme}://{request.Host}/profile"),
                 }),
         };
-        return descriptor;
+        return Task.FromResult(descriptor)!;
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Net;
+using System.Text.Json;
 using DarkLink.Util.JsonLd;
 using DarkLink.Util.JsonLd.Types;
 using DarkLink.Web.ActivityPub.Serialization;
@@ -7,8 +8,10 @@ using DarkLink.Web.ActivityPub.Server;
 using DarkLink.Web.ActivityPub.Types;
 using DarkLink.Web.ActivityPub.Types.Extended;
 using DarkLink.Web.WebFinger.Server;
+using Demo.Server;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.Options;
 using ASLink = DarkLink.Web.ActivityPub.Types.Link;
 using Constants = DarkLink.Web.ActivityPub.Types.Constants;
 using Object = DarkLink.Web.ActivityPub.Types.Object;
@@ -16,11 +19,14 @@ using Object = DarkLink.Web.ActivityPub.Types.Object;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddWebFinger<ResourceDescriptorProvider>();
 builder.Services.Configure<ForwardedHeadersOptions>(options => { options.ForwardedHeaders = ForwardedHeaders.All; });
+builder.Services.AddOptions<Config>().BindConfiguration(Config.KEY);
 
 var app = builder.Build();
 app.UseForwardedHeaders();
+//app.UseAuthentication();
 app.UseWebFinger();
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
+var config = app.Services.GetRequiredService<IOptions<Config>>().Value;
 
 var linkedDataOptions = new LinkedDataSerializationOptions
 {
@@ -35,45 +41,48 @@ var linkedDataOptions = new LinkedDataSerializationOptions
     },
 };
 
-app.MapGet("/profiles/{username}", (string username) => $"Welcome to the profile of [{username}].");
+await InitDataAsync();
 
-app.MapGet("/profile.png", async ctx => { await ctx.Response.SendFileAsync("./profile.png", ctx.RequestAborted); });
-
-app.MapGet("/profiles/{username}.json", async ctx =>
+app.MapGet("/profile", async ctx =>
 {
     await DumpRequestAsync("Profile", ctx.Request);
 
-    if (!ctx.Request.RouteValues.TryGetValue("username", out var usernameRaw)
-        || usernameRaw is not string username)
-    {
-        ctx.Response.StatusCode = (int) HttpStatusCode.BadRequest;
-        return;
-    }
+    var data = await ReadData<PersonData>("profile/data.json") ?? throw new InvalidOperationException();
 
-    if (!Directory.Exists($"./data/{username}"))
-    {
-        ctx.Response.StatusCode = (int) HttpStatusCode.NotFound;
-        return;
-    }
-
-    var person = new Person(
-        new Uri($"{ctx.Request.Scheme}://{ctx.Request.Host}/profiles/{username}/inbox"),
-        new Uri($"{ctx.Request.Scheme}://{ctx.Request.Host}/profiles/{username}/outbox"))
-    {
-        Id = new Uri($"{ctx.Request.Scheme}://{ctx.Request.Host}/profiles/{username}.json"),
-        PreferredUsername = username,
-        Name = $"Waldemar Tomme [{username}]",
-        Summary = "Just testing around 🧪",
-        Url = DataList.From<LinkTo<Object>>(new Uri($"{ctx.Request.Scheme}://{ctx.Request.Host}/profiles/{username}")),
-        Icon = DataList.From<LinkTo<Image>>(new Image
+    var icon = default(LinkableList<Image>);
+    if (File.Exists(GetProfilePath("icon.png")))
+        icon = new Image
         {
             MediaType = "image/png",
-            Url = DataList.From<LinkTo<Object>>(new Uri($"{ctx.Request.Scheme}://{ctx.Request.Host}/profile.png")),
-        }),
+            Url = ctx.BuildUri("profile/icon.png"),
+        };
+
+    var image = default(LinkableList<Image>);
+    if (File.Exists(GetProfilePath("image.png")))
+        image = new Image
+        {
+            MediaType = "image/png",
+            Url = ctx.BuildUri("profile/image.png"),
+        };
+
+    var person = new Person(
+        ctx.BuildUri("/inbox"),
+        ctx.BuildUri("/outbox"))
+    {
+        Id = ctx.BuildUri("/profile"),
+        PreferredUsername = config.Username,
+        Name = data.Name,
+        Summary = data.Summary,
+        Icon = icon,
+        Image = image,
     };
 
     await ctx.Response.WriteLinkedData(person, Constants.Context, linkedDataOptions, ctx.RequestAborted);
 });
+
+app.MapGet("/profile/icon.png", ctx => ctx.Response.SendFileAsync(GetProfilePath("icon.png"), ctx.RequestAborted));
+
+app.MapGet("/profile/image.png", ctx => ctx.Response.SendFileAsync(GetProfilePath("image.png"), ctx.RequestAborted));
 
 app.MapGet("/profiles/{username}/outbox", async ctx =>
 {
@@ -133,7 +142,7 @@ app.MapGet("/notes/{username}/{note}/activity", async ctx =>
 
 app.MapMethods(
     "/{*path}",
-    new[] {HttpMethods.Get, HttpMethods.Post},
+    new[] {HttpMethods.Get, HttpMethods.Post,},
     async ctx =>
     {
         await DumpRequestAsync("<none>", ctx.Request, true);
@@ -204,8 +213,39 @@ async Task<Create> GetNoteActivityAsync(string scheme, string host, string usern
     };
 }
 
+async Task InitDataAsync()
+{
+    Directory.CreateDirectory(GetDataPath(string.Empty));
+    Directory.CreateDirectory(GetProfilePath(string.Empty));
+    await File.WriteAllTextAsync(
+        GetProfilePath("data.json"),
+        JsonSerializer.Serialize(new PersonData("<no name>", default)));
+}
+
+string GetDataPath(string path)
+    => Path.Combine(config!.DataDirectory, path);
+
+string GetProfilePath(string path)
+    => GetDataPath(Path.Combine("profile", path));
+
+async Task<T?> ReadData<T>(string file, CancellationToken cancellationToken = default)
+{
+    var path = GetDataPath(file);
+    if (!File.Exists(path))
+        return default;
+
+    await using var stream = File.OpenRead(path);
+    var value = await JsonSerializer.DeserializeAsync<T>(stream, cancellationToken: cancellationToken);
+    return value;
+}
+
 internal static class Helper
 {
+    public static Uri BuildUri(this HttpContext ctx, string path)
+        => new($"{ctx.Request.Scheme}://{ctx.Request.Host}/{path.TrimStart('/')}");
+
     public static Task<T[]> WhenAll<T>(this IEnumerable<Task<T>> tasks, CancellationToken cancellationToken = default)
         => Task.WhenAll(tasks);
 }
+
+internal record PersonData(string Name, string? Summary);

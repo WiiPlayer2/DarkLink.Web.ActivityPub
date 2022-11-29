@@ -29,6 +29,9 @@ public record Object : Entity
     [LinkedDataProperty($"{Constants.NAMESPACE}icon")]
     public LinkableList<Image> Icon { get; init; }
 
+    [LinkedDataProperty($"{Constants.NAMESPACE}image")]
+    public LinkableList<Image> Image { get; init; }
+
     [LinkedDataProperty($"{Constants.NAMESPACE}name")]
     public string? Name { get; init; }
 
