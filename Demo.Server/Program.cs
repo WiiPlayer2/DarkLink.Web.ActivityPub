@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Net;
+﻿using System.Net;
 using System.Text.Json;
 using DarkLink.Util.JsonLd;
 using DarkLink.Util.JsonLd.Types;
@@ -47,7 +46,7 @@ app.MapGet("/profile", async ctx =>
 {
     await DumpRequestAsync("Profile", ctx.Request);
 
-    var data = await ReadData<PersonData>("profile/data.json") ?? throw new InvalidOperationException();
+    var data = await ReadData<PersonData>(GetProfilePath("data.json")) ?? throw new InvalidOperationException();
 
     var icon = default(LinkableList<Image>);
     if (File.Exists(GetProfilePath("icon.png")))
@@ -84,60 +83,51 @@ app.MapGet("/profile/icon.png", ctx => ctx.Response.SendFileAsync(GetProfilePath
 
 app.MapGet("/profile/image.png", ctx => ctx.Response.SendFileAsync(GetProfilePath("image.png"), ctx.RequestAborted));
 
-app.MapGet("/profiles/{username}/outbox", async ctx =>
+app.MapGet("/notes/{id:guid}", async ctx =>
 {
-    await DumpRequestAsync("Outbox", ctx.Request);
-
-    if (!CheckRequest(ctx, out var username)) return;
-
-    var activities = await new DirectoryInfo($"./data/{username}")
-        .EnumerateFiles("*.txt")
-        .OrderBy(f => f.CreationTime)
-        .Select(f => GetNoteActivityAsync(ctx.Request.Scheme, ctx.Request.Host.ToString(), username, f.Name, ctx.RequestAborted))
-        .WhenAll();
-
-    var outboxCollection = new OrderedCollection
+    var id = Guid.Parse((string) ctx.GetRouteValue("id")!);
+    var note = await ReadNoteAsync(ctx, id, ctx.RequestAborted);
+    if (note is null)
     {
-        TotalItems = activities.Length,
-        OrderedItems = DataList.FromItems(activities.Select(a => (LinkTo<Object>) a!)),
-    };
-
-    await ctx.Response.WriteLinkedData(outboxCollection, Constants.Context, linkedDataOptions, ctx.RequestAborted);
-});
-
-app.MapPost("/profiles/{username}/inbox", async ctx =>
-{
-    await DumpRequestAsync("[POST] Inbox", ctx.Request);
-
-    if (!CheckRequest(ctx, out var username)) return;
-
-    var data = await ctx.Request.ReadLinkedData<Activity>(linkedDataOptions);
-});
-
-app.MapGet("/notes/{username}/{note}", async ctx =>
-{
-    await DumpRequestAsync("Note", ctx.Request);
-
-    if (!CheckRequest(ctx, out var username)
-        || !ctx.Request.RouteValues.TryGetValue("note", out var noteFileRaw)
-        || noteFileRaw is not string noteFile) return;
-
-    var note = await GetNoteAsync(ctx.Request.Scheme, ctx.Request.Host.ToString(), username, noteFile, ctx.RequestAborted);
+        ctx.Response.StatusCode = (int) HttpStatusCode.NotFound;
+        await ctx.Response.CompleteAsync();
+        return;
+    }
 
     await ctx.Response.WriteLinkedData(note, Constants.Context, linkedDataOptions, ctx.RequestAborted);
 });
 
-app.MapGet("/notes/{username}/{note}/activity", async ctx =>
+app.MapGet("/notes/{id:guid}/activity", async ctx =>
 {
-    await DumpRequestAsync("Activity", ctx.Request);
+    var id = Guid.Parse((string) ctx.GetRouteValue("id")!);
+    var create = await ReadNoteCreateAsync(ctx, id, ctx.RequestAborted);
+    if (create is null)
+    {
+        ctx.Response.StatusCode = (int) HttpStatusCode.NotFound;
+        await ctx.Response.CompleteAsync();
+        return;
+    }
 
-    if (!CheckRequest(ctx, out var username)
-        || !ctx.Request.RouteValues.TryGetValue("note", out var noteFileRaw)
-        || noteFileRaw is not string noteFile) return;
+    await ctx.Response.WriteLinkedData(create, Constants.Context, linkedDataOptions, ctx.RequestAborted);
+});
 
-    var activity = await GetNoteActivityAsync(ctx.Request.Scheme, ctx.Request.Host.ToString(), username, noteFile, ctx.RequestAborted);
+app.MapGet("/outbox", async ctx =>
+{
+    var directoryInfo = new DirectoryInfo(GetNotePath(string.Empty));
 
-    await ctx.Response.WriteLinkedData(activity, Constants.Context, linkedDataOptions, ctx.RequestAborted);
+    var creates = await directoryInfo
+        .EnumerateFiles("*.json")
+        .OrderBy(f => f.CreationTime)
+        .Select(f => ReadNoteCreateAsync(ctx, Guid.Parse(Path.GetFileNameWithoutExtension(f.Name)), ctx.RequestAborted))
+        .WhenAll(ctx.RequestAborted);
+
+    var outboxCollection = new OrderedCollection
+    {
+        TotalItems = creates.Length,
+        OrderedItems = DataList.FromItems(creates.Select(a => (LinkTo<Object>) a!)),
+    };
+
+    await ctx.Response.WriteLinkedData(outboxCollection, Constants.Context, linkedDataOptions, ctx.RequestAborted);
 });
 
 app.MapMethods(
@@ -167,59 +157,58 @@ async Task DumpRequestAsync(string topic, HttpRequest request, bool dumpBody = f
     logger.LogDebug($"{topic}\n{request.Method} {request.GetDisplayUrl()}\n{query}\n{headers}\n{body}");
 }
 
-bool CheckRequest(HttpContext ctx, [NotNullWhen(true)] out string? username)
+async Task<Note?> ReadNoteAsync(HttpContext ctx, Guid id, CancellationToken cancellationToken = default)
 {
-    username = default;
-    if (!ctx.Request.RouteValues.TryGetValue("username", out var usernameRaw)
-        || usernameRaw is not string usernameLocal)
-    {
-        ctx.Response.StatusCode = (int) HttpStatusCode.BadRequest;
-        return false;
-    }
+    var notePath = GetNotePath($"{id}.json");
+    var data = await ReadData<NoteData>(notePath, cancellationToken);
+    if (data is null)
+        return null;
 
-    if (!Directory.Exists($"./data/{usernameLocal}"))
+    var fileInfo = new FileInfo(notePath);
+    var note = new Note
     {
-        ctx.Response.StatusCode = (int) HttpStatusCode.NotFound;
-        return false;
-    }
-
-    username = usernameLocal;
-    return true;
-}
-
-async Task<Note> GetNoteAsync(string scheme, string host, string username, string filename, CancellationToken cancellationToken = default)
-{
-    var fileInfo = new FileInfo($"./data/{username}/{filename}");
-    return new Note
-    {
-        Id = new Uri($"{scheme}://{host}/notes/{username}/{fileInfo.Name}"),
-        To = DataList.From<LinkTo<Object>>(new Uri("https://www.w3.org/ns/activitystreams#Public")),
-        AttributedTo = DataList.From<LinkTo<Object>>(new Uri($"{scheme}://{host}/profiles/{username}.json")),
-        //Published = fileInfo.CreationTime,
-        Content = await File.ReadAllTextAsync(fileInfo.FullName, cancellationToken),
+        Id = ctx.BuildUri($"/notes/{id}"),
+        Content = data.Content,
+        To = Constants.Public,
+        //Published = data.Published ?? fileInfo.CreationTime,
     };
+    return note;
 }
 
-async Task<Create> GetNoteActivityAsync(string scheme, string host, string username, string filename, CancellationToken cancellationToken = default)
+async Task<Create?> ReadNoteCreateAsync(HttpContext ctx, Guid id, CancellationToken cancellationToken = default)
 {
-    var note = await GetNoteAsync(scheme, host, username, filename, cancellationToken);
-    return new Create
+    var note = await ReadNoteAsync(ctx, id, cancellationToken);
+    if (note is null)
+        return null;
+
+    var create = new Create
     {
-        Id = new Uri($"{note.Id}/activity"),
-        //Published = note.Published,
+        Id = ctx.BuildUri($"/notes/{id}/activity"),
+        Actor = ctx.BuildUri("/profile"),
+        Object = note,
         To = note.To,
-        Actor = DataList.From<LinkTo<Actor>>(new Uri($"{scheme}://{host}/profiles/{username}.json")),
-        Object = DataList.From<LinkTo<Object>>(note),
+        //Published = note.Published,
     };
+    return create;
 }
 
 async Task InitDataAsync()
 {
     Directory.CreateDirectory(GetDataPath(string.Empty));
     Directory.CreateDirectory(GetProfilePath(string.Empty));
-    await File.WriteAllTextAsync(
-        GetProfilePath("data.json"),
-        JsonSerializer.Serialize(new PersonData("<no name>", default)));
+    Directory.CreateDirectory(GetNotePath(string.Empty));
+
+    var profileDataPath = GetProfilePath("data.json");
+    if (!File.Exists(profileDataPath))
+        await File.WriteAllTextAsync(
+            profileDataPath,
+            JsonSerializer.Serialize(new PersonData("<no name>", default)));
+
+    var initNoteDataPath = GetNotePath($"{Guid.Empty}.json");
+    if (!File.Exists(initNoteDataPath))
+        await File.WriteAllTextAsync(
+            initNoteDataPath,
+            JsonSerializer.Serialize(new NoteData("🚩 This marks the start. 🚩", DateTimeOffset.Now)));
 }
 
 string GetDataPath(string path)
@@ -228,9 +217,11 @@ string GetDataPath(string path)
 string GetProfilePath(string path)
     => GetDataPath(Path.Combine("profile", path));
 
-async Task<T?> ReadData<T>(string file, CancellationToken cancellationToken = default)
+string GetNotePath(string path)
+    => GetDataPath(Path.Combine("notes", path));
+
+async Task<T?> ReadData<T>(string path, CancellationToken cancellationToken = default)
 {
-    var path = GetDataPath(file);
     if (!File.Exists(path))
         return default;
 
@@ -249,3 +240,5 @@ internal static class Helper
 }
 
 internal record PersonData(string Name, string? Summary);
+
+internal record NoteData(string Content, DateTimeOffset? Published);

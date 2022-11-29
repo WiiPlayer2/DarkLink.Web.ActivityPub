@@ -24,6 +24,8 @@ public static class Constants
         }!,
     });
 
+    public static readonly Uri Public = new($"{NAMESPACE}Public");
+
     private static (Uri Id, TermMapping Mapping) Map(string property, string iri, string type)
         => (new Uri(property, UriKind.Relative),
             new TermMapping(new Uri(iri, UriKind.RelativeOrAbsolute))
