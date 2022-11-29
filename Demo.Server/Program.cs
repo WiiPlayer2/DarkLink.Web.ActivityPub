@@ -74,6 +74,7 @@ app.MapGet("/profile", async ctx =>
         Summary = data.Summary,
         Icon = icon,
         Image = image,
+        Followers = ctx.BuildUri("/followers"),
     };
 
     await ctx.Response.WriteLinkedData(person, Constants.Context, linkedDataOptions, ctx.RequestAborted);
@@ -130,6 +131,40 @@ app.MapGet("/outbox", async ctx =>
     await ctx.Response.WriteLinkedData(outboxCollection, Constants.Context, linkedDataOptions, ctx.RequestAborted);
 });
 
+app.MapGet("/followers", async ctx =>
+{
+    var followerUris = await ReadData<IReadOnlyList<Uri>>(GetProfilePath("followers.json"), ctx.RequestAborted) ?? throw new InvalidOperationException();
+
+    var followerCollection = new Collection
+    {
+        TotalItems = followerUris.Count,
+        Items = DataList.FromItems(followerUris.Select(u => (LinkTo<Object>) u)),
+    };
+
+    await ctx.Response.WriteLinkedData(followerCollection, Constants.Context, linkedDataOptions, ctx.RequestAborted);
+});
+
+app.MapPost("/inbox", async ctx =>
+{
+    var activity = await ctx.Request.ReadLinkedData<Activity>(linkedDataOptions, ctx.RequestAborted) ?? throw new InvalidOperationException();
+
+    switch (activity)
+    {
+        case Follow follow:
+            await Follow(follow, ctx.RequestAborted);
+            break;
+
+        case Undo undo:
+            await Undo(ctx, undo, ctx.RequestAborted);
+            break;
+
+        default:
+            logger.LogWarning($"Activities of type {activity.GetType()} are not supported.");
+            ctx.Response.StatusCode = (int) HttpStatusCode.InternalServerError; // TODO another error is definitely better
+            break;
+    }
+});
+
 app.MapMethods(
     "/{*path}",
     new[] {HttpMethods.Get, HttpMethods.Post,},
@@ -141,6 +176,42 @@ app.MapMethods(
     });
 
 app.Run();
+
+async Task Follow(Follow follow, CancellationToken cancellationToken = default)
+{
+    var followersDataPath = GetProfilePath("followers.json");
+    var followerUris = await ReadData<ISet<Uri>>(followersDataPath, cancellationToken) ?? throw new InvalidOperationException();
+
+    followerUris.Add(follow.Actor.Value!.Match(link => link.Id, actor => actor.Id)!);
+
+    await WriteData(followersDataPath, followerUris, cancellationToken);
+}
+
+async Task Unfollow(Follow follow, CancellationToken cancellationToken = default)
+{
+    var followersDataPath = GetProfilePath("followers.json");
+    var followerUris = await ReadData<ISet<Uri>>(followersDataPath, cancellationToken) ?? throw new InvalidOperationException();
+
+    followerUris.Remove(follow.Actor.Value!.Match(link => link.Id, actor => actor.Id)!);
+
+    await WriteData(followersDataPath, followerUris, cancellationToken);
+}
+
+async Task Undo(HttpContext ctx, Undo undo, CancellationToken cancellationToken = default)
+{
+    var activity = undo.Object.Value!.Match(_ => throw new InvalidOperationException(), o => o);
+    switch (activity)
+    {
+        case Follow follow:
+            await Unfollow(follow, cancellationToken);
+            break;
+
+        default:
+            logger.LogWarning($"Activities of type {activity.GetType()} are not supported while undoing.");
+            ctx.Response.StatusCode = (int) HttpStatusCode.InternalServerError; // TODO another error is definitely better
+            break;
+    }
+}
 
 async Task DumpRequestAsync(string topic, HttpRequest request, bool dumpBody = false)
 {
@@ -169,7 +240,11 @@ async Task<Note?> ReadNoteAsync(HttpContext ctx, Guid id, CancellationToken canc
     {
         Id = ctx.BuildUri($"/notes/{id}"),
         Content = data.Content,
-        To = Constants.Public,
+        To = DataList.FromItems(new LinkTo<Object>[]
+        {
+            Constants.Public,
+            ctx.BuildUri("/followers"),
+        }),
         //Published = data.Published ?? fileInfo.CreationTime,
     };
     return note;
@@ -204,6 +279,10 @@ async Task InitDataAsync()
             profileDataPath,
             JsonSerializer.Serialize(new PersonData("<no name>", default)));
 
+    var followersDataPath = GetProfilePath("followers.json");
+    if (!File.Exists(followersDataPath))
+        await File.WriteAllTextAsync(followersDataPath, "[]");
+
     var initNoteDataPath = GetNotePath($"{Guid.Empty}.json");
     if (!File.Exists(initNoteDataPath))
         await File.WriteAllTextAsync(
@@ -228,6 +307,12 @@ async Task<T?> ReadData<T>(string path, CancellationToken cancellationToken = de
     await using var stream = File.OpenRead(path);
     var value = await JsonSerializer.DeserializeAsync<T>(stream, cancellationToken: cancellationToken);
     return value;
+}
+
+async Task WriteData<T>(string path, T value, CancellationToken cancellationToken = default)
+{
+    await using var stream = File.Create(path);
+    await JsonSerializer.SerializeAsync(stream, value, cancellationToken: cancellationToken);
 }
 
 internal static class Helper
