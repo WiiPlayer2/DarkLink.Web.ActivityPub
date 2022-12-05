@@ -8,11 +8,17 @@ using DarkLink.Web.ActivityPub.Types;
 using DarkLink.Web.ActivityPub.Types.Extended;
 using DarkLink.Web.WebFinger.Server;
 using Demo.Server;
-using Microsoft.AspNetCore.Authorization;
+using MemoryStorage.DataSource;
+using MemoryStorage.Domain;
+using MemoryStorage.Stores;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Options;
+using OpenIddict.Validation.AspNetCore;
+using static OpenIddict.Server.OpenIddictServerEvents;
+using Application = MemoryStorage.Domain.Application;
 using ASLink = DarkLink.Web.ActivityPub.Types.Link;
+using Authorization = MemoryStorage.Domain.Authorization;
 using Constants = DarkLink.Web.ActivityPub.Types.Constants;
 using Object = DarkLink.Web.ActivityPub.Types.Object;
 
@@ -20,17 +26,63 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddWebFinger<ResourceDescriptorProvider>();
 builder.Services.Configure<ForwardedHeadersOptions>(options => { options.ForwardedHeaders = ForwardedHeaders.All; });
 builder.Services.AddOptions<Config>().BindConfiguration(Config.KEY);
+builder.Services.AddSingleton<ScopeDataSource>();
+builder.Services.AddSingleton<ApplicationDataSource>();
+builder.Services.AddAuthentication(options => { options.DefaultAuthenticateScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme; });
+builder.Services.AddAuthorization();
+builder.Services.AddOpenIddict()
+    .AddCore(options =>
+    {
+        options.SetDefaultScopeEntity<Scope>();
+        options.SetDefaultApplicationEntity<Application>();
+        options.SetDefaultAuthorizationEntity<Authorization>();
+        options.SetDefaultTokenEntity<Token>();
 
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultScheme = "Basic";
-    options.AddScheme<BasicAuthenticationHandler>("Basic", "Basic");
-});
-builder.Services.AddAuthorization(options => options.DefaultPolicy = new AuthorizationPolicyBuilder("Basic").RequireAuthenticatedUser().Build());
+        options.AddScopeStore<ScopeStore>();
+        options.AddApplicationStore<ApplicationStore>();
+        options.AddAuthorizationStore<AuthorizationStore>();
+        options.AddTokenStore<TokenStore>();
+    })
+    .AddServer(options =>
+    {
+        // Enable the token endpoints.
+        options.SetTokenEndpointUris("/token");
+
+        // Enable the authorization code flow.
+        //options.AllowAuthorizationCodeFlow();
+        options.AllowPasswordFlow();
+
+        // Accept anonymous clients (i.e clients that don't send a client_id).
+        options.AcceptAnonymousClients();
+
+        // Register the signing and encryption credentials.
+        options.AddDevelopmentEncryptionCertificate()
+            .AddDevelopmentSigningCertificate();
+
+        // Register the ASP.NET Core host and configure the authorization endpoint
+        // to allow the /authorize minimal API handler to handle authorization requests
+        // after being validated by the built-in OpenIddict server event handlers.
+        //
+        // Token requests will be handled by OpenIddict itself by reusing the identity
+        // created by the /authorize handler and stored in the authorization codes.
+        options.UseAspNetCore()
+            .EnableAuthorizationEndpointPassthrough();
+
+        options.AddEventHandler<HandleTokenRequestContext>(builder => builder.UseSingletonHandler<TokenRequestHandler>());
+    })
+    // Register the OpenIddict validation components.
+    .AddValidation(options =>
+    {
+        // Import the configuration from the local OpenIddict server instance.
+        options.UseLocalServer();
+
+        // Register the ASP.NET Core host.
+        options.UseAspNetCore();
+    });
 
 var app = builder.Build();
 app.UseForwardedHeaders();
-//app.UseAuthentication();
+app.UseAuthentication();
 app.UseAuthorization();
 app.UseWebFinger();
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
@@ -174,10 +226,7 @@ app.MapPost("/inbox", async ctx =>
     }
 });
 
-app.MapPost("/outbox", async ctx =>
-    {
-        throw new NotImplementedException();
-    })
+app.MapPost("/outbox", async ctx => { throw new NotImplementedException(); })
     .RequireAuthorization();
 
 app.MapMethods(
@@ -328,15 +377,6 @@ async Task WriteData<T>(string path, T value, CancellationToken cancellationToke
 {
     await using var stream = File.Create(path);
     await JsonSerializer.SerializeAsync(stream, value, cancellationToken: cancellationToken);
-}
-
-internal static class Helper
-{
-    public static Uri BuildUri(this HttpContext ctx, string path)
-        => new($"{ctx.Request.Scheme}://{ctx.Request.Host}/{path.TrimStart('/')}");
-
-    public static Task<T[]> WhenAll<T>(this IEnumerable<Task<T>> tasks, CancellationToken cancellationToken = default)
-        => Task.WhenAll(tasks);
 }
 
 internal record PersonData(string Name, string? Summary);

@@ -9,6 +9,11 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <PackageReference Include="OpenIddict.AspNetCore" Version="3.1.1" />
+	  <PackageReference Include="ppioli.Auth.MemoryStorage" Version="1.1.0" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<ProjectReference Include="..\DarkLink.Web.ActivityPub.Server\DarkLink.Web.ActivityPub.Server.csproj" />
 		<ProjectReference Include="..\DarkLink.Web.WebFinger.Server\DarkLink.Web.WebFinger.Server.csproj" />
 	</ItemGroup>
