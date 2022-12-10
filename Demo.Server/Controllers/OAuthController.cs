@@ -35,6 +35,55 @@ public class OAuthController : Controller
         this.userManager = userManager;
     }
 
+    [HttpPost, FormValueRequired("submit.Accept"), ActionName("Authorize"),]
+    public async Task<IActionResult> Accept()
+    {
+        var request = HttpContext.GetOpenIddictServerRequest() ?? throw new InvalidOperationException();
+        var user = await userManager.GetUserAsync(User) ??
+                   throw new InvalidOperationException("The user details cannot be retrieved.");
+        var application = await applicationManager.FindByClientIdAsync(request.ClientId ?? throw new InvalidOperationException(), HttpContext.RequestAborted) ??
+                          throw new InvalidOperationException();
+
+        var authorizations = await authorizationManager.FindAsync(
+            await userManager.GetUserIdAsync(user),
+            await applicationManager.GetIdAsync(application) ?? string.Empty,
+            Statuses.Valid,
+            AuthorizationTypes.Permanent,
+            request.GetScopes()).ToListAsync();
+
+        var identity = new ClaimsPrincipal(new ClaimsIdentity(
+            TokenValidationParameters.DefaultAuthenticationType,
+            Claims.Name,
+            Claims.Role));
+
+        // Add the claims that will be persisted in the tokens.
+        identity.SetClaim(Claims.Subject, await userManager.GetUserIdAsync(user))
+            .SetClaim(Claims.Email, await userManager.GetEmailAsync(user))
+            .SetClaim(Claims.Name, await userManager.GetUserNameAsync(user))
+            /*.SetClaims(Claims.Role, (await userManager.GetRolesAsync(user)).ToImmutableArray())*/;
+
+        // Note: in this sample, the granted scopes match the requested scope
+        // but you may want to allow the user to uncheck specific scopes.
+        // For that, simply restrict the list of scopes before calling SetScopes.
+        identity.SetScopes(request.GetScopes());
+        identity.SetResources(await scopeManager.ListResourcesAsync(identity.GetScopes()).ToListAsync());
+
+        // Automatically create a permanent authorization to avoid requiring explicit consent
+        // for future authorization or token requests containing the same scopes.
+        var authorization = authorizations.LastOrDefault();
+        authorization ??= await authorizationManager.CreateAsync(
+            identity,
+            await userManager.GetUserIdAsync(user),
+            await applicationManager.GetIdAsync(application) ?? throw new InvalidOperationException(),
+            AuthorizationTypes.Permanent,
+            identity.GetScopes());
+
+        identity.SetAuthorizationId(await authorizationManager.GetIdAsync(authorization));
+        identity.SetDestinations(identity.GetDestinations());
+
+        return SignIn(identity, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+    }
+
     [HttpGet, HttpPost,]
     public async Task<IActionResult> Authorize()
     {
@@ -66,7 +115,6 @@ public class OAuthController : Controller
                 IdentityConstants.ApplicationScheme);
         }
 
-
         var user = await userManager.GetUserAsync(result.Principal) ??
                    throw new InvalidOperationException("The user details cannot be retrieved.");
         var application = await applicationManager.FindByClientIdAsync(request.ClientId ?? throw new InvalidOperationException(), HttpContext.RequestAborted) ??
@@ -78,46 +126,6 @@ public class OAuthController : Controller
             Statuses.Valid,
             AuthorizationTypes.Permanent,
             request.GetScopes()).ToListAsync();
-
-        if (HttpContext.Request.HasFormContentType)
-        {
-            var form = await HttpContext.Request.ReadFormAsync();
-
-            if (!string.IsNullOrEmpty(form["submit.Accept"]))
-            {
-                var identity = new ClaimsPrincipal(new ClaimsIdentity(
-                    TokenValidationParameters.DefaultAuthenticationType,
-                    Claims.Name,
-                    Claims.Role));
-
-                // Add the claims that will be persisted in the tokens.
-                identity.SetClaim(Claims.Subject, await userManager.GetUserIdAsync(user))
-                    .SetClaim(Claims.Email, await userManager.GetEmailAsync(user))
-                    .SetClaim(Claims.Name, await userManager.GetUserNameAsync(user))
-                    /*.SetClaims(Claims.Role, (await userManager.GetRolesAsync(user)).ToImmutableArray())*/;
-
-                // Note: in this sample, the granted scopes match the requested scope
-                // but you may want to allow the user to uncheck specific scopes.
-                // For that, simply restrict the list of scopes before calling SetScopes.
-                identity.SetScopes(request.GetScopes());
-                identity.SetResources(await scopeManager.ListResourcesAsync(identity.GetScopes()).ToListAsync());
-
-                // Automatically create a permanent authorization to avoid requiring explicit consent
-                // for future authorization or token requests containing the same scopes.
-                var authorization = authorizations.LastOrDefault();
-                authorization ??= await authorizationManager.CreateAsync(
-                    identity,
-                    await userManager.GetUserIdAsync(user),
-                    await applicationManager.GetIdAsync(application) ?? throw new InvalidOperationException(),
-                    AuthorizationTypes.Permanent,
-                    identity.GetScopes());
-
-                identity.SetAuthorizationId(await authorizationManager.GetIdAsync(authorization));
-                identity.SetDestinations(identity.GetDestinations());
-
-                return SignIn(identity, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
-            }
-        }
 
         var consentType = await applicationManager.GetConsentTypeAsync(application);
         switch (consentType)
