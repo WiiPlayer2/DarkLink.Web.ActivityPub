@@ -7,8 +7,9 @@ using DarkLink.Web.ActivityPub.Types.Extended;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using Constants = DarkLink.Web.ActivityPub.Types.Constants;
 using FileIO = System.IO.File;
+using static DarkLink.Web.ActivityPub.Server.ActivityPubResults;
+using Constants = DarkLink.Web.ActivityPub.Types.Constants;
 using Object = DarkLink.Web.ActivityPub.Types.Object;
 
 namespace Demo.Server.Controllers;
@@ -32,7 +33,7 @@ public class ActivityPubController : Controller
     }
 
     [HttpGet, Route("~/followers"),]
-    public async Task GetFollowers()
+    public async Task<IActionResult> GetFollowers()
     {
         var followerUris = await apCore.ReadData<IReadOnlyList<Uri>>(apCore.GetProfilePath("followers.json"), HttpContext.RequestAborted) ?? throw new InvalidOperationException();
 
@@ -42,39 +43,29 @@ public class ActivityPubController : Controller
             Items = DataList.FromItems(followerUris.Select(u => (LinkTo<Object>) u)),
         };
 
-        await HttpContext.Response.WriteLinkedData(followerCollection, Constants.Context, linkedDataSerializationOptions, HttpContext.RequestAborted);
+        return LinkedData(followerCollection, Constants.Context, linkedDataSerializationOptions);
     }
 
     [HttpGet, Route("~/note/{id:guid}"),]
-    public async Task GetNote(Guid id)
+    public async Task<IActionResult> GetNote(Guid id)
     {
         var note = await ReadNoteAsync(HttpContext, id, HttpContext.RequestAborted);
-        if (note is null)
-        {
-            HttpContext.Response.StatusCode = (int) HttpStatusCode.NotFound;
-            await HttpContext.Response.CompleteAsync();
-            return;
-        }
+        if (note is null) return NotFound();
 
-        await HttpContext.Response.WriteLinkedData(note, Constants.Context, linkedDataSerializationOptions, HttpContext.RequestAborted);
+        return LinkedData(note, Constants.Context, linkedDataSerializationOptions);
     }
 
     [HttpGet, Route("~/note/{id:guid}/activity"),]
-    public async Task GetNoteActivity(Guid id)
+    public async Task<IActionResult> GetNoteActivity(Guid id)
     {
         var create = await ReadNoteCreateAsync(HttpContext, id, HttpContext.RequestAborted);
-        if (create is null)
-        {
-            HttpContext.Response.StatusCode = (int) HttpStatusCode.NotFound;
-            await HttpContext.Response.CompleteAsync();
-            return;
-        }
+        if (create is null) return NotFound();
 
-        await HttpContext.Response.WriteLinkedData(create, Constants.Context, linkedDataSerializationOptions, HttpContext.RequestAborted);
+        return LinkedData(create, Constants.Context, linkedDataSerializationOptions);
     }
 
     [HttpGet, Route("~/outbox"),]
-    public async Task GetOutbox()
+    public async Task<IActionResult> GetOutbox()
     {
         var directoryInfo = new DirectoryInfo(apCore.GetNotePath(string.Empty));
 
@@ -90,11 +81,11 @@ public class ActivityPubController : Controller
             OrderedItems = DataList.FromItems(creates.Select(a => (LinkTo<Object>) a!)),
         };
 
-        await HttpContext.Response.WriteLinkedData(outboxCollection, Constants.Context, linkedDataSerializationOptions, HttpContext.RequestAborted);
+        return LinkedData(outboxCollection, Constants.Context, linkedDataSerializationOptions);
     }
 
     [HttpGet, Route("~/profile"),]
-    public async Task GetProfile()
+    public async Task<IActionResult> GetProfile()
     {
         //await DumpRequestAsync("Profile", ctx.Request);
 
@@ -129,7 +120,7 @@ public class ActivityPubController : Controller
             Followers = HttpContext.BuildUri("/followers"),
         };
 
-        await HttpContext.Response.WriteLinkedData(person, Constants.Context, linkedDataSerializationOptions, HttpContext.RequestAborted);
+        return LinkedData(person, Constants.Context, linkedDataSerializationOptions);
     }
 
     [HttpPost, Route("~/inbox"),]
