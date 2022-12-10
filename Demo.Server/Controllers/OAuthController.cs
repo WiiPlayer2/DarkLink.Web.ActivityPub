@@ -198,4 +198,20 @@ public class OAuthController : Controller
 ", "text/html");
         }
     }
+
+    [HttpPost, Route("/api/v1/apps"),]
+    public async Task<IActionResult> AutoRegisterApp()
+    {
+        var request = await Request.ReadFromJsonAsync<DeviceRegistrationRequest>() ?? throw new InvalidOperationException();
+        var response = new OpenIddictResponse(new Dictionary<string, StringValues>
+        {
+            {"client_id", "no"},
+            {"client_secret", "no"},
+            {"client_secret_expires_at", "2893276800"},
+            {"redirect_uris", request.RedirectUris},
+            {"client_name", request.ClientName},
+            {"grant_types", new[] {GrantTypes.Password, GrantTypes.AuthorizationCode, GrantTypes.RefreshToken,}},
+        });
+        return Created(string.Empty, response);
+    }
 }

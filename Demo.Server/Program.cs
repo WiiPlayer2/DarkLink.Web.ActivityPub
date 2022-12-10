@@ -15,10 +15,8 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Primitives;
 using OpenIddict.Abstractions;
 using OpenIddict.EntityFrameworkCore.Models;
-using static OpenIddict.Abstractions.OpenIddictConstants;
 using static OpenIddict.Server.OpenIddictServerEvents;
 using ASLink = DarkLink.Web.ActivityPub.Types.Link;
 using Constants = DarkLink.Web.ActivityPub.Types.Constants;
@@ -254,22 +252,6 @@ app.MapPost("/inbox", async ctx =>
 
 app.MapPost("/outbox", async ctx => { throw new NotImplementedException(); })
     .RequireAuthorization();
-
-app.MapPost("/api/v1/apps", async ctx =>
-{
-    var request = await ctx.Request.ReadFromJsonAsync<DeviceRegistrationRequest>() ?? throw new InvalidOperationException();
-    var response = new OpenIddictResponse(new Dictionary<string, StringValues>
-    {
-        {"client_id", "no"},
-        {"client_secret", "no"},
-        {"client_secret_expires_at", "2893276800"},
-        {"redirect_uris", request.RedirectUris},
-        {"client_name", request.ClientName},
-        {"grant_types", new[] {GrantTypes.Password, GrantTypes.AuthorizationCode, GrantTypes.RefreshToken,}},
-    });
-    ctx.Response.StatusCode = (int) HttpStatusCode.Created;
-    await ctx.Response.WriteAsJsonAsync(response);
-});
 
 //app.MapMethods(
 //    "/{*path}",
