@@ -94,7 +94,8 @@ builder.Services.AddOpenIddict()
         options.UseAspNetCore();
     });
 
-builder.Services.AddControllers(options => { options.ModelBinderProviders.Insert(0, new ActivityPubModelBinderProvider()); });
+builder.Services.AddControllers()
+    .AddActivityPub();
 
 var app = builder.Build();
 app.UseForwardedHeaders();
