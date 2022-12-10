@@ -1,6 +1,4 @@
 using System.Text.Json;
-using DarkLink.Util.JsonLd;
-using DarkLink.Web.ActivityPub.Serialization;
 using DarkLink.Web.WebFinger.Server;
 using Demo.Server;
 using MemoryStorage.DataSource;
@@ -14,19 +12,6 @@ using OpenIddict.EntityFrameworkCore.Models;
 using static OpenIddict.Server.OpenIddictServerEvents;
 using ASLink = DarkLink.Web.ActivityPub.Types.Link;
 
-var linkedDataOptions = new LinkedDataSerializationOptions
-{
-    Converters =
-    {
-        new LinkToConverter(),
-        new LinkableListConverter(),
-    },
-    TypeResolvers =
-    {
-        new ActivityPubTypeResolver(),
-    },
-};
-
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddWebFinger<ResourceDescriptorProvider>();
 builder.Services.AddSingleton<APCore>();
@@ -34,7 +19,6 @@ builder.Services.Configure<ForwardedHeadersOptions>(options => { options.Forward
 builder.Services.AddOptions<Config>().BindConfiguration(Config.KEY);
 builder.Services.AddSingleton<ScopeDataSource>();
 builder.Services.AddSingleton<ApplicationDataSource>();
-builder.Services.AddSingleton(linkedDataOptions);
 //builder.Services.AddAuthentication(options =>
 //{
 //    options.DefaultAuthenticateScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;

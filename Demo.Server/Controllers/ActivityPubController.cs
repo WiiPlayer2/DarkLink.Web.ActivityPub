@@ -1,5 +1,4 @@
 ﻿using System.Net;
-using DarkLink.Util.JsonLd;
 using DarkLink.Util.JsonLd.Types;
 using DarkLink.Web.ActivityPub.Server;
 using DarkLink.Web.ActivityPub.Types;
@@ -9,7 +8,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using FileIO = System.IO.File;
 using static DarkLink.Web.ActivityPub.Server.ActivityPubResults;
-using Constants = DarkLink.Web.ActivityPub.Types.Constants;
 using Object = DarkLink.Web.ActivityPub.Types.Object;
 
 namespace Demo.Server.Controllers;
@@ -20,14 +18,11 @@ public class ActivityPubController : Controller
 
     private readonly Config config;
 
-    private readonly LinkedDataSerializationOptions linkedDataSerializationOptions;
-
     private readonly ILogger<ActivityPubController> logger;
 
-    public ActivityPubController(APCore apCore, IOptions<Config> config, LinkedDataSerializationOptions linkedDataSerializationOptions, ILogger<ActivityPubController> logger)
+    public ActivityPubController(APCore apCore, IOptions<Config> config, ILogger<ActivityPubController> logger)
     {
         this.apCore = apCore;
-        this.linkedDataSerializationOptions = linkedDataSerializationOptions;
         this.logger = logger;
         this.config = config.Value;
     }
@@ -43,7 +38,7 @@ public class ActivityPubController : Controller
             Items = DataList.FromItems(followerUris.Select(u => (LinkTo<Object>) u)),
         };
 
-        return LinkedData(followerCollection, Constants.Context, linkedDataSerializationOptions);
+        return ActivityPub(followerCollection);
     }
 
     [HttpGet, Route("~/note/{id:guid}"),]
@@ -52,7 +47,7 @@ public class ActivityPubController : Controller
         var note = await ReadNoteAsync(HttpContext, id, HttpContext.RequestAborted);
         if (note is null) return NotFound();
 
-        return LinkedData(note, Constants.Context, linkedDataSerializationOptions);
+        return ActivityPub(note);
     }
 
     [HttpGet, Route("~/note/{id:guid}/activity"),]
@@ -61,7 +56,7 @@ public class ActivityPubController : Controller
         var create = await ReadNoteCreateAsync(HttpContext, id, HttpContext.RequestAborted);
         if (create is null) return NotFound();
 
-        return LinkedData(create, Constants.Context, linkedDataSerializationOptions);
+        return ActivityPub(create);
     }
 
     [HttpGet, Route("~/outbox"),]
@@ -81,7 +76,7 @@ public class ActivityPubController : Controller
             OrderedItems = DataList.FromItems(creates.Select(a => (LinkTo<Object>) a!)),
         };
 
-        return LinkedData(outboxCollection, Constants.Context, linkedDataSerializationOptions);
+        return ActivityPub(outboxCollection);
     }
 
     [HttpGet, Route("~/profile"),]
@@ -120,13 +115,13 @@ public class ActivityPubController : Controller
             Followers = HttpContext.BuildUri("/followers"),
         };
 
-        return LinkedData(person, Constants.Context, linkedDataSerializationOptions);
+        return ActivityPub(person);
     }
 
     [HttpPost, Route("~/inbox"),]
     public async Task PostInbox()
     {
-        var activity = await HttpContext.Request.ReadLinkedData<Activity>(linkedDataSerializationOptions, HttpContext.RequestAborted) ?? throw new InvalidOperationException();
+        var activity = await HttpContext.Request.ReadLinkedData<Activity>(Constants.SerializationOptions, HttpContext.RequestAborted) ?? throw new InvalidOperationException();
 
         switch (activity)
         {

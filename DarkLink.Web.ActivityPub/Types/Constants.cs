@@ -1,4 +1,6 @@
-﻿using DarkLink.Util.JsonLd.Types;
+﻿using DarkLink.Util.JsonLd;
+using DarkLink.Util.JsonLd.Types;
+using DarkLink.Web.ActivityPub.Serialization;
 
 namespace DarkLink.Web.ActivityPub.Types;
 
@@ -24,7 +26,21 @@ public static class Constants
         }!,
     });
 
+    public static readonly LinkedDataSerializationOptions SerializationOptions = new()
+    {
+        Converters =
+        {
+            new LinkToConverter(),
+            new LinkableListConverter(),
+        },
+        TypeResolvers =
+        {
+            new ActivityPubTypeResolver(),
+        },
+    };
+
     public static readonly Uri Public = new($"{NAMESPACE}Public");
+
 
     private static (Uri Id, TermMapping Mapping) Map(string property, string iri, string type)
         => (new Uri(property, UriKind.Relative),
