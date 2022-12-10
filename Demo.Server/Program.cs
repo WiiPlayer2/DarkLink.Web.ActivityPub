@@ -179,6 +179,8 @@ app.MapGet("/profile", async ctx =>
     await ctx.Response.WriteLinkedData(person, Constants.Context, linkedDataOptions, ctx.RequestAborted);
 });
 
+app.MapGet("/api/whoami", () => Results.Redirect("/profile"));
+
 app.MapGet("/profile/icon.png", ctx => ctx.Response.SendFileAsync(GetProfilePath("icon.png"), ctx.RequestAborted));
 
 app.MapGet("/profile/image.png", ctx => ctx.Response.SendFileAsync(GetProfilePath("image.png"), ctx.RequestAborted));
