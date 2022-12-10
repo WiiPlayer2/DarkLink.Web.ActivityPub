@@ -7,12 +7,15 @@ namespace DarkLink.Util.JsonLd;
 public static class LinkedDataSerializer
 {
     public static T? Deserialize<T>(JsonNode node, LinkedDataSerializationOptions? options = default)
+        => (T?) Deserialize(typeof(T), node, options);
+
+    public static object? Deserialize(Type type, JsonNode node, LinkedDataSerializationOptions? options = default)
     {
         options ??= new LinkedDataSerializationOptions();
 
         var expanded = node.Expand();
         var linkedData = DeserializeLinkedData(expanded, options.JsonSerializerOptions);
-        var value = DeserializeFromLinkedData<T>(linkedData, options);
+        var value = DeserializeFromLinkedData(linkedData, type, options);
         return value;
     }
 

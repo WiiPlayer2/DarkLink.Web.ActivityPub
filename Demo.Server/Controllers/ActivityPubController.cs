@@ -1,6 +1,5 @@
 ﻿using System.Net;
 using DarkLink.Util.JsonLd.Types;
-using DarkLink.Web.ActivityPub.Server;
 using DarkLink.Web.ActivityPub.Types;
 using DarkLink.Web.ActivityPub.Types.Extended;
 using Microsoft.AspNetCore.Authorization;
@@ -119,10 +118,8 @@ public class ActivityPubController : Controller
     }
 
     [HttpPost, Route("~/inbox"),]
-    public async Task PostInbox()
+    public async Task<IActionResult> PostInbox(Activity activity)
     {
-        var activity = await HttpContext.Request.ReadLinkedData<Activity>(Constants.SerializationOptions, HttpContext.RequestAborted) ?? throw new InvalidOperationException();
-
         switch (activity)
         {
             case Follow follow:
@@ -135,9 +132,10 @@ public class ActivityPubController : Controller
 
             default:
                 logger.LogWarning($"Activities of type {activity.GetType()} are not supported.");
-                HttpContext.Response.StatusCode = (int) HttpStatusCode.InternalServerError; // TODO another error is definitely better
-                break;
+                return StatusCode((int) HttpStatusCode.InternalServerError); // TODO another error is definitely better
         }
+
+        return Ok();
     }
 
     [HttpPost, Authorize, Route("~/outbox"),]

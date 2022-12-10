@@ -1,4 +1,5 @@
 using System.Text.Json;
+using DarkLink.Web.ActivityPub.Server;
 using DarkLink.Web.WebFinger.Server;
 using Demo.Server;
 using MemoryStorage.DataSource;
@@ -92,6 +93,8 @@ builder.Services.AddOpenIddict()
         // Register the ASP.NET Core host.
         options.UseAspNetCore();
     });
+
+builder.Services.AddControllers(options => { options.ModelBinderProviders.Insert(0, new ActivityPubModelBinderProvider()); });
 
 var app = builder.Build();
 app.UseForwardedHeaders();

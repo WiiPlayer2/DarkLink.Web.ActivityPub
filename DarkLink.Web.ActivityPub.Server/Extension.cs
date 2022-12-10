@@ -8,6 +8,12 @@ namespace DarkLink.Web.ActivityPub.Server;
 
 public static class Extension
 {
+    public static async ValueTask<T?> ReadActivityPub<T>(this HttpRequest request, LinkedDataSerializationOptions? options = null, CancellationToken cancellationToken = default)
+        => (T?) await request.ReadActivityPub(typeof(T), options, cancellationToken);
+
+    public static ValueTask<object?> ReadActivityPub(this HttpRequest request, Type type, LinkedDataSerializationOptions? options = null, CancellationToken cancellationToken = default)
+        => request.ReadLinkedData(type, options ?? Constants.SerializationOptions, cancellationToken);
+
     public static ValueTask<T?> ReadLinkedData<T>(
         this HttpRequest request,
         CancellationToken cancellationToken = default)
@@ -17,12 +23,19 @@ public static class Extension
         this HttpRequest request,
         LinkedDataSerializationOptions options,
         CancellationToken cancellationToken = default)
+        => (T?) await request.ReadLinkedData(typeof(T), options, cancellationToken);
+
+    public static async ValueTask<object?> ReadLinkedData(
+        this HttpRequest request,
+        Type type,
+        LinkedDataSerializationOptions options,
+        CancellationToken cancellationToken = default)
     {
         var node = await request.ReadFromJsonAsync<JsonNode>(cancellationToken);
         if (node is null)
             return default;
 
-        var value = LinkedDataSerializer.Deserialize<T>(node, options);
+        var value = LinkedDataSerializer.Deserialize(type, node, options);
         return value;
     }
 
