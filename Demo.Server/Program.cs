@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using OpenIddict.Abstractions;
 using OpenIddict.EntityFrameworkCore.Models;
+using OpenIddict.Validation.AspNetCore;
 using static OpenIddict.Server.OpenIddictServerEvents;
 using ASLink = DarkLink.Web.ActivityPub.Types.Link;
 
@@ -20,10 +21,10 @@ builder.Services.Configure<ForwardedHeadersOptions>(options => { options.Forward
 builder.Services.AddOptions<Config>().BindConfiguration(Config.KEY);
 builder.Services.AddSingleton<ScopeDataSource>();
 builder.Services.AddSingleton<ApplicationDataSource>();
-//builder.Services.AddAuthentication(options =>
-//{
-//    options.DefaultAuthenticateScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
-//});
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
+});
 //builder.Services.AddAuthorization();
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
