@@ -24,6 +24,7 @@ using Object = DarkLink.Web.ActivityPub.Types.Object;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddWebFinger<ResourceDescriptorProvider>();
+builder.Services.AddSingleton<APCore>();
 builder.Services.Configure<ForwardedHeadersOptions>(options => { options.ForwardedHeaders = ForwardedHeaders.All; });
 builder.Services.AddOptions<Config>().BindConfiguration(Config.KEY);
 builder.Services.AddSingleton<ScopeDataSource>();
@@ -107,8 +108,10 @@ app.UseForwardedHeaders();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseWebFinger();
+
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
 var config = app.Services.GetRequiredService<IOptions<Config>>().Value;
+var apCore = app.Services.GetRequiredService<APCore>();
 
 var linkedDataOptions = new LinkedDataSerializationOptions
 {
@@ -129,10 +132,10 @@ app.MapGet("/profile", async ctx =>
 {
     await DumpRequestAsync("Profile", ctx.Request);
 
-    var data = await ReadData<PersonData>(GetProfilePath("data.json")) ?? throw new InvalidOperationException();
+    var data = await apCore.ReadData<PersonData>(apCore.GetProfilePath("data.json")) ?? throw new InvalidOperationException();
 
     var icon = default(LinkableList<Image>);
-    if (File.Exists(GetProfilePath("icon.png")))
+    if (File.Exists(apCore.GetProfilePath("icon.png")))
         icon = new Image
         {
             MediaType = "image/png",
@@ -140,7 +143,7 @@ app.MapGet("/profile", async ctx =>
         };
 
     var image = default(LinkableList<Image>);
-    if (File.Exists(GetProfilePath("image.png")))
+    if (File.Exists(apCore.GetProfilePath("image.png")))
         image = new Image
         {
             MediaType = "image/png",
@@ -165,9 +168,9 @@ app.MapGet("/profile", async ctx =>
 
 app.MapGet("/api/whoami", () => Results.Redirect("/profile"));
 
-app.MapGet("/profile/icon.png", ctx => ctx.Response.SendFileAsync(GetProfilePath("icon.png"), ctx.RequestAborted));
+app.MapGet("/profile/icon.png", ctx => ctx.Response.SendFileAsync(apCore.GetProfilePath("icon.png"), ctx.RequestAborted));
 
-app.MapGet("/profile/image.png", ctx => ctx.Response.SendFileAsync(GetProfilePath("image.png"), ctx.RequestAborted));
+app.MapGet("/profile/image.png", ctx => ctx.Response.SendFileAsync(apCore.GetProfilePath("image.png"), ctx.RequestAborted));
 
 app.MapGet("/notes/{id:guid}", async ctx =>
 {
@@ -199,7 +202,7 @@ app.MapGet("/notes/{id:guid}/activity", async ctx =>
 
 app.MapGet("/outbox", async ctx =>
 {
-    var directoryInfo = new DirectoryInfo(GetNotePath(string.Empty));
+    var directoryInfo = new DirectoryInfo(apCore.GetNotePath(string.Empty));
 
     var creates = await directoryInfo
         .EnumerateFiles("*.json")
@@ -218,7 +221,7 @@ app.MapGet("/outbox", async ctx =>
 
 app.MapGet("/followers", async ctx =>
 {
-    var followerUris = await ReadData<IReadOnlyList<Uri>>(GetProfilePath("followers.json"), ctx.RequestAborted) ?? throw new InvalidOperationException();
+    var followerUris = await apCore.ReadData<IReadOnlyList<Uri>>(apCore.GetProfilePath("followers.json"), ctx.RequestAborted) ?? throw new InvalidOperationException();
 
     var followerCollection = new Collection
     {
@@ -236,11 +239,11 @@ app.MapPost("/inbox", async ctx =>
     switch (activity)
     {
         case Follow follow:
-            await Follow(follow, ctx.RequestAborted);
+            await apCore.Follow(follow, ctx.RequestAborted);
             break;
 
         case Undo undo:
-            await Undo(ctx, undo, ctx.RequestAborted);
+            await apCore.Undo(ctx, undo, ctx.RequestAborted);
             break;
 
         default:
@@ -267,42 +270,6 @@ app.MapRazorPages();
 app.MapControllers();
 app.Run();
 
-async Task Follow(Follow follow, CancellationToken cancellationToken = default)
-{
-    var followersDataPath = GetProfilePath("followers.json");
-    var followerUris = await ReadData<ISet<Uri>>(followersDataPath, cancellationToken) ?? throw new InvalidOperationException();
-
-    followerUris.Add(follow.Actor.Value!.Match(link => link.Id, actor => actor.Id)!);
-
-    await WriteData(followersDataPath, followerUris, cancellationToken);
-}
-
-async Task Unfollow(Follow follow, CancellationToken cancellationToken = default)
-{
-    var followersDataPath = GetProfilePath("followers.json");
-    var followerUris = await ReadData<ISet<Uri>>(followersDataPath, cancellationToken) ?? throw new InvalidOperationException();
-
-    followerUris.Remove(follow.Actor.Value!.Match(link => link.Id, actor => actor.Id)!);
-
-    await WriteData(followersDataPath, followerUris, cancellationToken);
-}
-
-async Task Undo(HttpContext ctx, Undo undo, CancellationToken cancellationToken = default)
-{
-    var activity = undo.Object.Value!.Match(_ => throw new InvalidOperationException(), o => o);
-    switch (activity)
-    {
-        case Follow follow:
-            await Unfollow(follow, cancellationToken);
-            break;
-
-        default:
-            logger.LogWarning($"Activities of type {activity.GetType()} are not supported while undoing.");
-            ctx.Response.StatusCode = (int) HttpStatusCode.InternalServerError; // TODO another error is definitely better
-            break;
-    }
-}
-
 async Task DumpRequestAsync(string topic, HttpRequest request, bool dumpBody = false)
 {
     var headers = string.Join('\n', request.Headers.Select(h => $"{h.Key}: {h.Value}"));
@@ -320,8 +287,8 @@ async Task DumpRequestAsync(string topic, HttpRequest request, bool dumpBody = f
 
 async Task<Note?> ReadNoteAsync(HttpContext ctx, Guid id, CancellationToken cancellationToken = default)
 {
-    var notePath = GetNotePath($"{id}.json");
-    var data = await ReadData<NoteData>(notePath, cancellationToken);
+    var notePath = apCore.GetNotePath($"{id}.json");
+    var data = await apCore.ReadData<NoteData>(notePath, cancellationToken);
     if (data is null)
         return null;
 
@@ -364,21 +331,21 @@ async Task InitDataAsync()
     var scopeManager = scopedServices.ServiceProvider.GetRequiredService<IOpenIddictScopeStoreResolver>().Get<OpenIddictEntityFrameworkCoreScope>();
     var userManager = scopedServices.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
 
-    Directory.CreateDirectory(GetDataPath(string.Empty));
-    Directory.CreateDirectory(GetProfilePath(string.Empty));
-    Directory.CreateDirectory(GetNotePath(string.Empty));
+    Directory.CreateDirectory(apCore.GetDataPath(string.Empty));
+    Directory.CreateDirectory(apCore.GetProfilePath(string.Empty));
+    Directory.CreateDirectory(apCore.GetNotePath(string.Empty));
 
-    var profileDataPath = GetProfilePath("data.json");
+    var profileDataPath = apCore.GetProfilePath("data.json");
     if (!File.Exists(profileDataPath))
         await File.WriteAllTextAsync(
             profileDataPath,
             JsonSerializer.Serialize(new PersonData("<no name>", default)));
 
-    var followersDataPath = GetProfilePath("followers.json");
+    var followersDataPath = apCore.GetProfilePath("followers.json");
     if (!File.Exists(followersDataPath))
         await File.WriteAllTextAsync(followersDataPath, "[]");
 
-    var initNoteDataPath = GetNotePath($"{Guid.Empty}.json");
+    var initNoteDataPath = apCore.GetNotePath($"{Guid.Empty}.json");
     if (!File.Exists(initNoteDataPath))
         await File.WriteAllTextAsync(
             initNoteDataPath,
@@ -418,31 +385,6 @@ async Task InitDataAsync()
         CancellationToken.None);
 
     await userManager.CreateAsync(new IdentityUser(config.Username), config.Password);
-}
-
-string GetDataPath(string path)
-    => Path.Combine(config!.DataDirectory, path);
-
-string GetProfilePath(string path)
-    => GetDataPath(Path.Combine("profile", path));
-
-string GetNotePath(string path)
-    => GetDataPath(Path.Combine("notes", path));
-
-async Task<T?> ReadData<T>(string path, CancellationToken cancellationToken = default)
-{
-    if (!File.Exists(path))
-        return default;
-
-    await using var stream = File.OpenRead(path);
-    var value = await JsonSerializer.DeserializeAsync<T>(stream, cancellationToken: cancellationToken);
-    return value;
-}
-
-async Task WriteData<T>(string path, T value, CancellationToken cancellationToken = default)
-{
-    await using var stream = File.Create(path);
-    await JsonSerializer.SerializeAsync(stream, value, cancellationToken: cancellationToken);
 }
 
 internal record PersonData(string Name, string? Summary);
