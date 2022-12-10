@@ -1,7 +1,4 @@
-using System.Collections.Immutable;
 using System.Net;
-using System.Net.Mime;
-using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using DarkLink.Util.JsonLd;
@@ -13,28 +10,17 @@ using DarkLink.Web.ActivityPub.Types.Extended;
 using DarkLink.Web.WebFinger.Server;
 using Demo.Server;
 using MemoryStorage.DataSource;
-using MemoryStorage.Domain;
-using MemoryStorage.Stores;
-using Microsoft.AspNetCore;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http.Extensions;
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
-using Microsoft.IdentityModel.Tokens;
 using OpenIddict.Abstractions;
 using OpenIddict.EntityFrameworkCore.Models;
-using OpenIddict.Server;
-using OpenIddict.Server.AspNetCore;
-using OpenIddict.Validation.AspNetCore;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 using static OpenIddict.Server.OpenIddictServerEvents;
-using Application = MemoryStorage.Domain.Application;
 using ASLink = DarkLink.Web.ActivityPub.Types.Link;
-using Authorization = MemoryStorage.Domain.Authorization;
 using Constants = DarkLink.Web.ActivityPub.Types.Constants;
 using Object = DarkLink.Web.ActivityPub.Types.Object;
 
@@ -279,192 +265,24 @@ app.MapPost("/api/v1/apps", async ctx =>
         {"client_secret_expires_at", "2893276800"},
         {"redirect_uris", request.RedirectUris},
         {"client_name", request.ClientName},
-        {"grant_types", new[]{OpenIddictConstants.GrantTypes.Password, OpenIddictConstants.GrantTypes.AuthorizationCode, OpenIddictConstants.GrantTypes.RefreshToken}},
+        {"grant_types", new[] {GrantTypes.Password, GrantTypes.AuthorizationCode, GrantTypes.RefreshToken,}},
     });
     ctx.Response.StatusCode = (int) HttpStatusCode.Created;
     await ctx.Response.WriteAsJsonAsync(response);
 });
 
-app.MapMethods("/oauth/authorize", new[] {"GET", "POST"}, async ctx =>
-{
-    var applicationManager = ctx.RequestServices.GetRequiredService<IOpenIddictApplicationManager>();
-    var authorizationManager = ctx.RequestServices.GetRequiredService<IOpenIddictAuthorizationManager>();
-    var scopeManager = ctx.RequestServices.GetRequiredService<IOpenIddictScopeManager>();
-    var userManager = ctx.RequestServices.GetRequiredService<UserManager<IdentityUser>>();
-
-    var request = ctx.GetOpenIddictServerRequest() ?? throw new InvalidOperationException();
-    var result = await ctx.AuthenticateAsync();
-
-    if (!result.Succeeded || request.HasPrompt(Prompts.Login))
-    {
-        if (request.HasPrompt(Prompts.None))
-        {
-            await ctx.ForbidAsync(
-                OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme,
-                new(new Dictionary<string, string?>()
-                {
-                    [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.LoginRequired,
-                    [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "The user is not logged in.",
-                }));
-            return;
-        }
-
-        var prompt = string.Join(" ", request.GetPrompts().Remove(Prompts.Login));
-
-        var parameters = ctx.Request.HasFormContentType ? ctx.Request.Form.Where(parameter => parameter.Key != Parameters.Prompt).ToList() : ctx.Request.Query.Where(parameter => parameter.Key != Parameters.Prompt).ToList();
-
-        parameters.Add(KeyValuePair.Create(Parameters.Prompt, new StringValues(prompt)));
-
-        await ctx.ChallengeAsync(
-            IdentityConstants.ApplicationScheme,
-            new()
-            {
-                RedirectUri = ctx.Request.PathBase + ctx.Request.Path + QueryString.Create(parameters),
-            });
-        return;
-    }
-
-
-    var user = await userManager.GetUserAsync(result.Principal) ??
-               throw new InvalidOperationException("The user details cannot be retrieved.");
-    var application = await applicationManager.FindByClientIdAsync(request.ClientId ?? throw new InvalidOperationException(), ctx.RequestAborted) ??
-                      throw new InvalidOperationException();
-
-    var authorizations = await authorizationManager.FindAsync(
-        subject: await userManager.GetUserIdAsync(user),
-        client: await applicationManager.GetIdAsync(application) ?? string.Empty,
-        status: Statuses.Valid,
-        type: AuthorizationTypes.Permanent,
-        scopes: request.GetScopes()).ToListAsync();
-
-    if (ctx.Request.HasFormContentType)
-    {
-        var form = await ctx.Request.ReadFormAsync();
-
-        if (!string.IsNullOrEmpty(form["submit.Accept"]))
-        {
-            var identity = new ClaimsPrincipal(new ClaimsIdentity(
-                authenticationType: TokenValidationParameters.DefaultAuthenticationType,
-                nameType: Claims.Name,
-                roleType: Claims.Role));
-
-            // Add the claims that will be persisted in the tokens.
-            identity.SetClaim(Claims.Subject, await userManager.GetUserIdAsync(user))
-                .SetClaim(Claims.Email, await userManager.GetEmailAsync(user))
-                .SetClaim(Claims.Name, await userManager.GetUserNameAsync(user))
-                /*.SetClaims(Claims.Role, (await userManager.GetRolesAsync(user)).ToImmutableArray())*/;
-
-            // Note: in this sample, the granted scopes match the requested scope
-            // but you may want to allow the user to uncheck specific scopes.
-            // For that, simply restrict the list of scopes before calling SetScopes.
-            identity.SetScopes(request.GetScopes());
-            identity.SetResources(await scopeManager.ListResourcesAsync(identity.GetScopes()).ToListAsync());
-
-            // Automatically create a permanent authorization to avoid requiring explicit consent
-            // for future authorization or token requests containing the same scopes.
-            var authorization = authorizations.LastOrDefault();
-            authorization ??= await authorizationManager.CreateAsync(
-                identity,
-                subject: await userManager.GetUserIdAsync(user),
-                client: await applicationManager.GetIdAsync(application) ?? throw new InvalidOperationException(),
-                type: AuthorizationTypes.Permanent,
-                scopes: identity.GetScopes());
-
-            identity.SetAuthorizationId(await authorizationManager.GetIdAsync(authorization));
-            identity.SetDestinations(identity.GetDestinations());
-
-            await ctx.SignInAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme, identity);
-            return;
-        }
-    }
-
-    var consentType = await applicationManager.GetConsentTypeAsync(application);
-    switch (consentType)
-    {
-        case ConsentTypes.External when !authorizations.Any():
-            await ctx.ForbidAsync(
-                OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
-                properties: new AuthenticationProperties(new Dictionary<string, string?>
-                {
-                    [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.ConsentRequired,
-                    [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] =
-                        "The logged in user is not allowed to access this client application."
-                }));
-            return;
-
-        case ConsentTypes.Implicit:
-        case ConsentTypes.External when authorizations.Any():
-        case ConsentTypes.Explicit when authorizations.Any() && !request.HasPrompt(Prompts.Consent):
-            // Create the claims-based identity that will be used by OpenIddict to generate tokens.
-            var identity = new ClaimsPrincipal(new ClaimsIdentity(
-                authenticationType: TokenValidationParameters.DefaultAuthenticationType,
-                nameType: Claims.Name,
-                roleType: Claims.Role));
-
-            // Add the claims that will be persisted in the tokens.
-            identity.SetClaim(Claims.Subject, await userManager.GetUserIdAsync(user))
-                    .SetClaim(Claims.Email, await userManager.GetEmailAsync(user))
-                    .SetClaim(Claims.Name, await userManager.GetUserNameAsync(user))
-                    /*.SetClaims(Claims.Role, (await userManager.GetRolesAsync(user)).ToImmutableArray())*/;
-
-            // Note: in this sample, the granted scopes match the requested scope
-            // but you may want to allow the user to uncheck specific scopes.
-            // For that, simply restrict the list of scopes before calling SetScopes.
-            identity.SetScopes(request.GetScopes());
-            identity.SetResources(await scopeManager.ListResourcesAsync(identity.GetScopes()).ToListAsync());
-
-            // Automatically create a permanent authorization to avoid requiring explicit consent
-            // for future authorization or token requests containing the same scopes.
-            var authorization = authorizations.LastOrDefault();
-            authorization ??= await authorizationManager.CreateAsync(
-                principal: identity,
-                subject: await userManager.GetUserIdAsync(user),
-                client: await applicationManager.GetIdAsync(application) ?? throw new InvalidOperationException(),
-                type: AuthorizationTypes.Permanent,
-                scopes: identity.GetScopes());
-
-            identity.SetAuthorizationId(await authorizationManager.GetIdAsync(authorization));
-            identity.SetDestinations(identity.GetDestinations());
-
-            await ctx.SignInAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme, identity);
-            return;
-
-        case ConsentTypes.Explicit when request.HasPrompt(Prompts.None):
-        case ConsentTypes.Systematic when request.HasPrompt(Prompts.None):
-            await ctx.ForbidAsync(
-                OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
-                properties: new AuthenticationProperties(new Dictionary<string, string?>
-                {
-                    [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.ConsentRequired,
-                    [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] =
-                        "Interactive user consent is required.",
-                }));
-            return;
-
-        default:
-            await ctx.Response.WriteAsync(@$"
-<p class=""lead text-left"">Do you want to grant <strong>{applicationManager.GetLocalizedDisplayNameAsync(application)}</strong> access to your data? (scopes requested: {request.Scope})</p>
-<form action=""/oauth/authorize"" method=""post"">
-{string.Join("\n", (ctx.Request.HasFormContentType ? (IEnumerable<KeyValuePair<string, StringValues>>)ctx.Request.Form : ctx.Request.Query).Select(p => $"<input type=\"hidden\" name=\"{p.Key}\" value=\"{p.Value}\" />"))}
-<input class=""btn btn-lg btn-success"" name=""submit.Accept"" type=""submit"" value=""Yes"" />
-<input class=""btn btn-lg btn-danger"" name=""submit.Deny"" type=""submit"" value=""No"" />
-</form>
-", CancellationToken.None);
-            return;
-    }
-});
-
-app.MapMethods(
-    "/{*path}",
-    new[] { HttpMethods.Get, HttpMethods.Post, },
-    async ctx =>
-    {
-        await DumpRequestAsync("<none>", ctx.Request, true);
-        ctx.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-        await ctx.Response.CompleteAsync();
-    });
+//app.MapMethods(
+//    "/{*path}",
+//    new[] { HttpMethods.Get, HttpMethods.Post, },
+//    async ctx =>
+//    {
+//        await DumpRequestAsync("<none>", ctx.Request, true);
+//        ctx.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+//        await ctx.Response.CompleteAsync();
+//    });
 
 app.MapRazorPages();
+app.MapControllers();
 app.Run();
 
 async Task Follow(Follow follow, CancellationToken cancellationToken = default)
@@ -585,33 +403,33 @@ async Task InitDataAsync()
             JsonSerializer.Serialize(new NoteData("🚩 This marks the start. 🚩", DateTimeOffset.Now)));
 
     await applicationManager.CreateAsync(
-        new()
+        new OpenIddictApplicationDescriptor
         {
             ClientId = "no",
             ClientSecret = "no",
             RedirectUris =
             {
-                new("http://oauth-redirect.andstatus.org"),
+                new Uri("http://oauth-redirect.andstatus.org"),
             },
         },
         CancellationToken.None);
 
     await scopeManager.CreateAsync(
-        new()
+        new OpenIddictEntityFrameworkCoreScope
         {
             Name = "read",
         },
         CancellationToken.None);
 
     await scopeManager.CreateAsync(
-        new()
+        new OpenIddictEntityFrameworkCoreScope
         {
             Name = "write",
         },
         CancellationToken.None);
 
     await scopeManager.CreateAsync(
-        new()
+        new OpenIddictEntityFrameworkCoreScope
         {
             Name = "follow",
         },
@@ -653,8 +471,7 @@ internal record DeviceRegistrationRequest(
     [property: JsonPropertyName("client_name")]
     string ClientName,
     [property: JsonPropertyName("redirect_uris")]
-    StringValues RedirectUris,
-    [property: JsonPropertyName("scopes")]
-    string Scopes,
+    string RedirectUris,
+    [property: JsonPropertyName("scopes")] string Scopes,
     [property: JsonPropertyName("website")]
     Uri Website);
