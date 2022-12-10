@@ -1,12 +1,6 @@
-using System.Net;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using DarkLink.Util.JsonLd;
-using DarkLink.Util.JsonLd.Types;
 using DarkLink.Web.ActivityPub.Serialization;
-using DarkLink.Web.ActivityPub.Server;
-using DarkLink.Web.ActivityPub.Types;
-using DarkLink.Web.ActivityPub.Types.Extended;
 using DarkLink.Web.WebFinger.Server;
 using Demo.Server;
 using MemoryStorage.DataSource;
@@ -19,8 +13,19 @@ using OpenIddict.Abstractions;
 using OpenIddict.EntityFrameworkCore.Models;
 using static OpenIddict.Server.OpenIddictServerEvents;
 using ASLink = DarkLink.Web.ActivityPub.Types.Link;
-using Constants = DarkLink.Web.ActivityPub.Types.Constants;
-using Object = DarkLink.Web.ActivityPub.Types.Object;
+
+var linkedDataOptions = new LinkedDataSerializationOptions
+{
+    Converters =
+    {
+        new LinkToConverter(),
+        new LinkableListConverter(),
+    },
+    TypeResolvers =
+    {
+        new ActivityPubTypeResolver(),
+    },
+};
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddWebFinger<ResourceDescriptorProvider>();
@@ -29,6 +34,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options => { options.Forward
 builder.Services.AddOptions<Config>().BindConfiguration(Config.KEY);
 builder.Services.AddSingleton<ScopeDataSource>();
 builder.Services.AddSingleton<ApplicationDataSource>();
+builder.Services.AddSingleton(linkedDataOptions);
 //builder.Services.AddAuthentication(options =>
 //{
 //    options.DefaultAuthenticateScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
@@ -113,156 +119,19 @@ var logger = app.Services.GetRequiredService<ILogger<Program>>();
 var config = app.Services.GetRequiredService<IOptions<Config>>().Value;
 var apCore = app.Services.GetRequiredService<APCore>();
 
-var linkedDataOptions = new LinkedDataSerializationOptions
-{
-    Converters =
-    {
-        new LinkToConverter(),
-        new LinkableListConverter(),
-    },
-    TypeResolvers =
-    {
-        new ActivityPubTypeResolver(),
-    },
-};
-
 await InitDataAsync();
 
-app.MapGet("/profile", async ctx =>
-{
-    await DumpRequestAsync("Profile", ctx.Request);
-
-    var data = await apCore.ReadData<PersonData>(apCore.GetProfilePath("data.json")) ?? throw new InvalidOperationException();
-
-    var icon = default(LinkableList<Image>);
-    if (File.Exists(apCore.GetProfilePath("icon.png")))
-        icon = new Image
-        {
-            MediaType = "image/png",
-            Url = ctx.BuildUri("profile/icon.png"),
-        };
-
-    var image = default(LinkableList<Image>);
-    if (File.Exists(apCore.GetProfilePath("image.png")))
-        image = new Image
-        {
-            MediaType = "image/png",
-            Url = ctx.BuildUri("profile/image.png"),
-        };
-
-    var person = new Person(
-        ctx.BuildUri("/inbox"),
-        ctx.BuildUri("/outbox"))
-    {
-        Id = ctx.BuildUri("/profile"),
-        PreferredUsername = config.Username,
-        Name = data.Name,
-        Summary = data.Summary,
-        Icon = icon,
-        Image = image,
-        Followers = ctx.BuildUri("/followers"),
-    };
-
-    await ctx.Response.WriteLinkedData(person, Constants.Context, linkedDataOptions, ctx.RequestAborted);
-});
-
-app.MapGet("/api/whoami", () => Results.Redirect("/profile"));
-
 app.MapGet("/profile/icon.png", ctx => ctx.Response.SendFileAsync(apCore.GetProfilePath("icon.png"), ctx.RequestAborted));
-
 app.MapGet("/profile/image.png", ctx => ctx.Response.SendFileAsync(apCore.GetProfilePath("image.png"), ctx.RequestAborted));
-
-app.MapGet("/notes/{id:guid}", async ctx =>
-{
-    var id = Guid.Parse((string) ctx.GetRouteValue("id")!);
-    var note = await ReadNoteAsync(ctx, id, ctx.RequestAborted);
-    if (note is null)
-    {
-        ctx.Response.StatusCode = (int) HttpStatusCode.NotFound;
-        await ctx.Response.CompleteAsync();
-        return;
-    }
-
-    await ctx.Response.WriteLinkedData(note, Constants.Context, linkedDataOptions, ctx.RequestAborted);
-});
-
-app.MapGet("/notes/{id:guid}/activity", async ctx =>
-{
-    var id = Guid.Parse((string) ctx.GetRouteValue("id")!);
-    var create = await ReadNoteCreateAsync(ctx, id, ctx.RequestAborted);
-    if (create is null)
-    {
-        ctx.Response.StatusCode = (int) HttpStatusCode.NotFound;
-        await ctx.Response.CompleteAsync();
-        return;
-    }
-
-    await ctx.Response.WriteLinkedData(create, Constants.Context, linkedDataOptions, ctx.RequestAborted);
-});
-
-app.MapGet("/outbox", async ctx =>
-{
-    var directoryInfo = new DirectoryInfo(apCore.GetNotePath(string.Empty));
-
-    var creates = await directoryInfo
-        .EnumerateFiles("*.json")
-        .OrderBy(f => f.CreationTime)
-        .Select(f => ReadNoteCreateAsync(ctx, Guid.Parse(Path.GetFileNameWithoutExtension(f.Name)), ctx.RequestAborted))
-        .WhenAll(ctx.RequestAborted);
-
-    var outboxCollection = new OrderedCollection
-    {
-        TotalItems = creates.Length,
-        OrderedItems = DataList.FromItems(creates.Select(a => (LinkTo<Object>) a!)),
-    };
-
-    await ctx.Response.WriteLinkedData(outboxCollection, Constants.Context, linkedDataOptions, ctx.RequestAborted);
-});
-
-app.MapGet("/followers", async ctx =>
-{
-    var followerUris = await apCore.ReadData<IReadOnlyList<Uri>>(apCore.GetProfilePath("followers.json"), ctx.RequestAborted) ?? throw new InvalidOperationException();
-
-    var followerCollection = new Collection
-    {
-        TotalItems = followerUris.Count,
-        Items = DataList.FromItems(followerUris.Select(u => (LinkTo<Object>) u)),
-    };
-
-    await ctx.Response.WriteLinkedData(followerCollection, Constants.Context, linkedDataOptions, ctx.RequestAborted);
-});
-
-app.MapPost("/inbox", async ctx =>
-{
-    var activity = await ctx.Request.ReadLinkedData<Activity>(linkedDataOptions, ctx.RequestAborted) ?? throw new InvalidOperationException();
-
-    switch (activity)
-    {
-        case Follow follow:
-            await apCore.Follow(follow, ctx.RequestAborted);
-            break;
-
-        case Undo undo:
-            await apCore.Undo(ctx, undo, ctx.RequestAborted);
-            break;
-
-        default:
-            logger.LogWarning($"Activities of type {activity.GetType()} are not supported.");
-            ctx.Response.StatusCode = (int) HttpStatusCode.InternalServerError; // TODO another error is definitely better
-            break;
-    }
-});
-
-app.MapPost("/outbox", async ctx => { throw new NotImplementedException(); })
-    .RequireAuthorization();
+app.MapGet("/api/whoami", () => Results.Redirect("/profile"));
 
 //app.MapMethods(
 //    "/{*path}",
-//    new[] { HttpMethods.Get, HttpMethods.Post, },
+//    new[] {HttpMethods.Get, HttpMethods.Post,},
 //    async ctx =>
 //    {
 //        await DumpRequestAsync("<none>", ctx.Request, true);
-//        ctx.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+//        ctx.Response.StatusCode = (int) HttpStatusCode.InternalServerError;
 //        await ctx.Response.CompleteAsync();
 //    });
 
@@ -283,45 +152,6 @@ async Task DumpRequestAsync(string topic, HttpRequest request, bool dumpBody = f
     }
 
     logger.LogDebug($"{topic}\n{request.Method} {request.GetDisplayUrl()}\n{query}\n{headers}\n{body}");
-}
-
-async Task<Note?> ReadNoteAsync(HttpContext ctx, Guid id, CancellationToken cancellationToken = default)
-{
-    var notePath = apCore.GetNotePath($"{id}.json");
-    var data = await apCore.ReadData<NoteData>(notePath, cancellationToken);
-    if (data is null)
-        return null;
-
-    var fileInfo = new FileInfo(notePath);
-    var note = new Note
-    {
-        Id = ctx.BuildUri($"/notes/{id}"),
-        Content = data.Content,
-        To = DataList.FromItems(new LinkTo<Object>[]
-        {
-            Constants.Public,
-            ctx.BuildUri("/followers"),
-        }),
-        //Published = data.Published ?? fileInfo.CreationTime,
-    };
-    return note;
-}
-
-async Task<Create?> ReadNoteCreateAsync(HttpContext ctx, Guid id, CancellationToken cancellationToken = default)
-{
-    var note = await ReadNoteAsync(ctx, id, cancellationToken);
-    if (note is null)
-        return null;
-
-    var create = new Create
-    {
-        Id = ctx.BuildUri($"/notes/{id}/activity"),
-        Actor = ctx.BuildUri("/profile"),
-        Object = note,
-        To = note.To,
-        //Published = note.Published,
-    };
-    return create;
 }
 
 async Task InitDataAsync()
@@ -386,16 +216,3 @@ async Task InitDataAsync()
 
     await userManager.CreateAsync(new IdentityUser(config.Username), config.Password);
 }
-
-internal record PersonData(string Name, string? Summary);
-
-internal record NoteData(string Content, DateTimeOffset? Published);
-
-internal record DeviceRegistrationRequest(
-    [property: JsonPropertyName("client_name")]
-    string ClientName,
-    [property: JsonPropertyName("redirect_uris")]
-    string RedirectUris,
-    [property: JsonPropertyName("scopes")] string Scopes,
-    [property: JsonPropertyName("website")]
-    Uri Website);

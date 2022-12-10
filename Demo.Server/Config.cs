@@ -1,6 +1,6 @@
 ﻿namespace Demo.Server;
 
-internal class Config
+public class Config
 {
     public const string KEY = "Config";
 

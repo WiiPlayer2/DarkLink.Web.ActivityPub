@@ -5,7 +5,7 @@ using Microsoft.Extensions.Options;
 
 namespace Demo.Server;
 
-internal class APCore
+public class APCore
 {
     private readonly Config config;
 
