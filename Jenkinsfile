@@ -22,7 +22,7 @@ pipeline {
 
         stage('Pack') {
             steps {
-                sh 'dotnet pack --no-build ./DarkLink.Web.ActivityPub.sln --output ./packages --version-suffix $(date +%s)'
+                sh 'dotnet pack --no-build ./DarkLink.Web.ActivityPub.sln --output ./packages --version-suffix pre$(date +%s)'
             }
         }
 
