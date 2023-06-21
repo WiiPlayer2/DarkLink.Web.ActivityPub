@@ -31,6 +31,9 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'private-nuget-repo', passwordVariable: 'apiKey', usernameVariable: 'source')]) {
                     sh "dotnet nuget push ./packages/* --skip-duplicate --source $source --api-key $apiKey"
                 }
+                withCredentials([usernamePassword(credentialsId: 'public-nuget-repo', passwordVariable: 'apiKey', usernameVariable: 'source')]) {
+                    sh "dotnet nuget push ./packages/DarkLink.Web.WebFinger.* --skip-duplicate --source $source --api-key $apiKey"
+                }
             }
         }
     }
