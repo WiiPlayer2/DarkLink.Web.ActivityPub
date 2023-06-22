@@ -4,6 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Description>This is a small library to make WebFinger requests.</Description>
   </PropertyGroup>
 
   <ItemGroup>

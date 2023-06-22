@@ -4,6 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Description>This library contains the shared models and logic for the client and server library.</Description>
   </PropertyGroup>
 
 </Project>

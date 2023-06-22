@@ -1,5 +1,10 @@
 ﻿<Project>
 	<PropertyGroup>
 		<VersionPrefix>0.1</VersionPrefix>
+		<Authors>WiiPlayer2</Authors>
+		<PackageTags>WebFinger;ActivityPub</PackageTags>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageProjectUrl>https://github.com/WiiPlayer2/DarkLink.Web.ActivityPub</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/WiiPlayer2/DarkLink.Web.ActivityPub</RepositoryUrl>
 	</PropertyGroup>
 </Project>
