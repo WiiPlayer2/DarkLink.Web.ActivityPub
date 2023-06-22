@@ -16,15 +16,15 @@ public class WebFingerClient : IDisposable
 
     public void Dispose() => httpClient.Dispose();
 
-    public Task<JsonResourceDescriptor?> GetResourceDescriptorAsync(string host, Uri resource, CancellationToken cancellationToken = default)
-        => GetResourceDescriptorAsync(host, resource, Array.Empty<string>(), cancellationToken);
+    public Task<JsonResourceDescriptor?> GetResourceDescriptorAsync(Uri server, Uri resource, CancellationToken cancellationToken = default)
+        => GetResourceDescriptorAsync(server, resource, Array.Empty<string>(), cancellationToken);
 
-    public async Task<JsonResourceDescriptor?> GetResourceDescriptorAsync(string host, Uri resource, IReadOnlyList<string> relations, CancellationToken cancellationToken = default)
+    public async Task<JsonResourceDescriptor?> GetResourceDescriptorAsync(Uri server, Uri resource, IReadOnlyList<string> relations, CancellationToken cancellationToken = default)
     {
         var queryString = $"{Constants.QUERY_RESOURCE}={Uri.EscapeDataString(resource.ToString())}";
         queryString += string.Concat(relations.Select(relation => $"&{Constants.QUERY_RELATION}={Uri.EscapeDataString(relation)}"));
 
-        var requestUri = new UriBuilder("https", host, 443, Constants.HTTP_PATH)
+        var requestUri = new UriBuilder(server.Scheme, server.Host, server.Port, Constants.HTTP_PATH)
         {
             Query = queryString,
         }.Uri;
