@@ -1,5 +1,4 @@
-﻿using System;
-using System.Net;
+﻿using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using DarkLink.Web.WebFinger.Shared;
@@ -16,6 +15,12 @@ public static class WebApiExtension
     {
         services.AddSingleton<IResourceDescriptorProvider, TResourceDescriptorProvider>();
     }
+
+    public static void AddWebFinger(this IServiceCollection services, IResourceDescriptorProvider implementationInstance)
+        => services.AddSingleton(implementationInstance);
+
+    public static void AddWebFinger(this IServiceCollection services, Func<IServiceProvider, IResourceDescriptorProvider> implementationFactory)
+        => services.AddSingleton(implementationFactory);
 
     public static void UseWebFinger(this IApplicationBuilder app)
     {
