@@ -1,25 +1,15 @@
-﻿using System;
-using System.Net.Http.Json;
+﻿using System.Net.Http.Json;
 using System.Text.Json;
 using DarkLink.Web.WebFinger.Shared;
 
 namespace DarkLink.Web.WebFinger.Client;
 
-public class WebFingerClient : IDisposable
+public static class HttpClientWebFingerExtension
 {
-    private readonly HttpClient httpClient;
+    public static Task<JsonResourceDescriptor?> GetResourceDescriptorAsync(this HttpClient httpClient, Uri server, Uri resource, CancellationToken cancellationToken = default)
+        => httpClient.GetResourceDescriptorAsync(server, resource, Array.Empty<string>(), cancellationToken);
 
-    public WebFingerClient(HttpClient httpClient)
-    {
-        this.httpClient = httpClient;
-    }
-
-    public void Dispose() => httpClient.Dispose();
-
-    public Task<JsonResourceDescriptor?> GetResourceDescriptorAsync(Uri server, Uri resource, CancellationToken cancellationToken = default)
-        => GetResourceDescriptorAsync(server, resource, Array.Empty<string>(), cancellationToken);
-
-    public async Task<JsonResourceDescriptor?> GetResourceDescriptorAsync(Uri server, Uri resource, IReadOnlyList<string> relations, CancellationToken cancellationToken = default)
+    public static async Task<JsonResourceDescriptor?> GetResourceDescriptorAsync(this HttpClient httpClient, Uri server, Uri resource, IReadOnlyList<string> relations, CancellationToken cancellationToken = default)
     {
         var queryString = $"{Constants.QUERY_RESOURCE}={Uri.EscapeDataString(resource.ToString())}";
         queryString += string.Concat(relations.Select(relation => $"&{Constants.QUERY_RELATION}={Uri.EscapeDataString(relation)}"));
