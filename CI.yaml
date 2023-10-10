@@ -1,12 +1,15 @@
 - Matcher:
     Branch: develop
+    PullRequest: false
   Nuget:
     SourceCredentials: private-nuget-repo
     Project: ./DarkLink.Web.ActivityPub.sln
     VersionSuffix: pre$TIMESTAMP
     PackageOutput: ./packages
+
 - Matcher:
     Branch: main
+    PullRequest: false
   Nuget:
     SourceCredentials: public-nuget-repo
     Project: ./DarkLink.Web.ActivityPub.sln
