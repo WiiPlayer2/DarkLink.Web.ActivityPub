@@ -12,7 +12,7 @@
     PullRequest: false
   Skips:
     - Publish
-  Nuget: *&developBuild
+  Nuget: *developBuild
 
 - Matcher:
     Branch: main
