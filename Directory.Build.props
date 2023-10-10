@@ -7,4 +7,8 @@
 		<PackageProjectUrl>https://github.com/WiiPlayer2/DarkLink.Web.ActivityPub</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/WiiPlayer2/DarkLink.Web.ActivityPub</RepositoryUrl>
 	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(MSBuildProjectName.StartsWith(`DarkLink.Web.WebFinger.`))' == 'true'">
+		<VersionPrefix>1.0</VersionPrefix>
+	</PropertyGroup>
 </Project>
