@@ -1,0 +1,24 @@
+- Matcher:
+    Branch: develop
+    PullRequest: false
+  Nuget: &developBuild
+    SourceCredentials: private-nuget-repo
+    Project: ./DarkLink.Web.ActivityPub.sln
+    VersionSuffix: pre$TIMESTAMP
+    PackageOutput: ./packages
+
+- Matcher:
+    Branch: develop
+    PullRequest: true
+  Skips:
+    - Publish
+  Nuget: *developBuild
+
+- Matcher:
+    Branch: main
+    PullRequest: false
+  Nuget:
+    SourceCredentials: public-nuget-repo
+    Project: ./DarkLink.Web.ActivityPub.sln
+    PackageOutput: ./packages
+    PackageFilter: DarkLink.Web.WebFinger.*
