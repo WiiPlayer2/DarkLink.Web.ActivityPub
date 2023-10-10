@@ -9,7 +9,7 @@
 
 - Matcher:
     Branch: develop
-    PullRequest: false
+    PullRequest: true
   Skips:
     - Publish
   Nuget: *developBuild
