@@ -1,11 +1,14 @@
-- Nuget:
+- Matcher:
+    Branch: develop
+  Nuget:
     SourceCredentials: private-nuget-repo
     Project: ./DarkLink.Web.ActivityPub.sln
     VersionSuffix: pre$TIMESTAMP
     PackageOutput: ./packages
-- Nuget:
+- Matcher:
+    Branch: main
+  Nuget:
     SourceCredentials: public-nuget-repo
     Project: ./DarkLink.Web.ActivityPub.sln
-    VersionSuffix: pre$TIMESTAMP
     PackageOutput: ./packages
     PackageFilter: DarkLink.Web.WebFinger.*
