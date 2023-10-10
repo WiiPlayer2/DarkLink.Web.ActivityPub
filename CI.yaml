@@ -1,0 +1,11 @@
+- Nuget:
+    SourceCredentials: private-nuget-repo
+    Project: ./DarkLink.Web.ActivityPub.sln
+    VersionSuffix: $TIMESTAMP
+    PackageOutput: ./packages
+- Nuget:
+    SourceCredentials: public-nuget-repo
+    Project: ./DarkLink.Web.ActivityPub.sln
+    VersionSuffix: $TIMESTAMP
+    PackageOutput: ./packages
+    PackageFilter: DarkLink.Web.WebFinger.*

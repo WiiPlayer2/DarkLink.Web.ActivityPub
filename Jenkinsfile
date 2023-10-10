@@ -1,41 +1,14 @@
-pipeline {
+def runAll()
+{
+    def configuredBuild = load "ci/jenkins/configuredBuild.groovy";
+    configuredBuild.runAll();
+}
+
+pipeline
+{
     agent {
         docker { image 'mcr.microsoft.com/dotnet/sdk:6.0' }
     }
 
-    environment {
-        DOTNET_CLI_HOME = '/tmp/DOTNET_CLI_HOME'
-        XDG_DATA_HOME = "/tmp"
-    }
-
-    stages {
-        stage('Cleanup') {
-            steps {
-                sh 'rm -r ./packages || true'
-            }
-        }
-
-        stage('Build') {
-            steps {
-                sh 'dotnet build ./DarkLink.Web.ActivityPub.sln'
-            }
-        }
-
-        stage('Pack') {
-            steps {
-                sh 'dotnet pack --no-build ./DarkLink.Web.ActivityPub.sln --output ./packages --version-suffix pre$(date +%s)'
-            }
-        }
-
-        stage('Publish') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'private-nuget-repo', passwordVariable: 'apiKey', usernameVariable: 'source')]) {
-                    sh "dotnet nuget push ./packages/* --skip-duplicate --source $source --api-key $apiKey"
-                }
-                withCredentials([usernamePassword(credentialsId: 'public-nuget-repo', passwordVariable: 'apiKey', usernameVariable: 'source')]) {
-                    sh "dotnet nuget push ./packages/DarkLink.Web.WebFinger.* --skip-duplicate --source $source --api-key $apiKey"
-                }
-            }
-        }
-    }
+    stages { stage('All') { steps { script { runAll(); } } } }
 }
