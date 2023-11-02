@@ -32,6 +32,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{FA2EF8
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DarkLink.Web.ActivityPub.Server", "DarkLink.Web.ActivityPub.Server\DarkLink.Web.ActivityPub.Server.csproj", "{2DB14492-3B92-4017-A55C-29409D34EF34}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DarkLink.Web.WebFinger.Server.Extensions.Oidc", "DarkLink.Web.WebFinger.Server.Extensions.Oidc\DarkLink.Web.WebFinger.Server.Extensions.Oidc.csproj", "{E8B1939B-36ED-4FEF-9369-E88866CB9279}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -78,6 +80,10 @@ Global
 		{2DB14492-3B92-4017-A55C-29409D34EF34}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2DB14492-3B92-4017-A55C-29409D34EF34}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2DB14492-3B92-4017-A55C-29409D34EF34}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E8B1939B-36ED-4FEF-9369-E88866CB9279}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E8B1939B-36ED-4FEF-9369-E88866CB9279}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E8B1939B-36ED-4FEF-9369-E88866CB9279}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E8B1939B-36ED-4FEF-9369-E88866CB9279}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -88,6 +94,7 @@ Global
 		{7C196AFD-2326-4422-B0C8-9630839700A3} = {92C74162-C9DE-4134-963B-508643F27E57}
 		{114B6891-7781-4FF4-87BC-30F85042FD22} = {AAACD007-6163-4339-9C2A-1E0DC6783647}
 		{3BB1E464-F08E-4528-B7A7-31A13E151BF9} = {AAACD007-6163-4339-9C2A-1E0DC6783647}
+		{E8B1939B-36ED-4FEF-9369-E88866CB9279} = {92C74162-C9DE-4134-963B-508643F27E57}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0E97A99A-6977-46EF-BE47-06881E7AC43D}
